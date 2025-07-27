@@ -4,6 +4,10 @@
 
 set -e
 
+# Source qimi installer
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/../common/install-qimi.sh"
+
 # Get codename from first argument, default to bookworm
 CODENAME="${1:-bookworm}"
 
@@ -24,16 +28,10 @@ esac
 
 # Configuration
 DEBIAN_URL="${MIRROR:-https://cloud.debian.org/images/cloud}/$CODENAME/latest/debian-$VERSION-generic-amd64.qcow2"
-IMAGE_NAME="debian-$CODENAME-cloud.qcow2"
+IMAGE_NAME="$CODENAME-generic-amd64.qcow2"
 OUTPUT_NAME="$CODENAME-generic-amd64-qa.qcow2"
 
 echo "Setting up Debian $CODENAME cloud image with qemu-guest-agent using qimi..."
-
-# Check if running as root
-if [[ $EUID -ne 0 ]]; then
-    echo "Error: This script must be run as root"
-    exit 1
-fi
 
 # Download Debian cloud image if it doesn't exist
 if [[ ! -f "$IMAGE_NAME" ]]; then
@@ -49,7 +47,7 @@ cp "$IMAGE_NAME" "$OUTPUT_NAME.tmp"
 
 # Install qemu-guest-agent using qimi (temporary mount)
 echo "Installing qemu-guest-agent..."
-qimi exec "$OUTPUT_NAME.tmp" /bin/bash -c "
+sudo "$QIMI_PATH" exec "$OUTPUT_NAME.tmp" -- /bin/bash -c "
     apt-get update
     apt-get install -y qemu-guest-agent
     systemctl enable qemu-guest-agent

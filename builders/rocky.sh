@@ -4,6 +4,10 @@
 
 set -e
 
+# Source qimi installer
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/../common/install-qimi.sh"
+
 # Get version from first argument, default to 9
 VERSION="${1:-9}"
 
@@ -21,20 +25,14 @@ esac
 # Configuration
 ROCKY_URL="${MIRROR:-https://download.rockylinux.org/pub/rocky}/$VERSION/images/x86_64/Rocky-$VERSION-GenericCloud.latest.x86_64.qcow2"
 CHECKSUM_URL="${MIRROR:-https://download.rockylinux.org/pub/rocky}/$VERSION/images/x86_64/CHECKSUM"
-IMAGE_NAME="rockylinux-$VERSION-cloud.qcow2"
+IMAGE_NAME="rockylinux-$VERSION-GenericCloud.latest.qcow2"
 OUTPUT_NAME="rockylinux-$VERSION-GenericCloud.latest-qa.qcow2"
 
 echo "Setting up Rocky Linux $VERSION cloud image with qemu-guest-agent using qimi..."
 
-# Check if running as root
-if [[ $EUID -ne 0 ]]; then
-    echo "Error: This script must be run as root"
-    exit 1
-fi
-
-# Download checksum file
+# Download checksum file (temporary)
 echo "Downloading checksum file..."
-if ! wget -q -O "$IMAGE_NAME.checksum" "$CHECKSUM_URL"; then
+if ! wget -q -O "$IMAGE_NAME.checksum.tmp" "$CHECKSUM_URL"; then
     echo "Warning: Could not download checksum file"
 fi
 
@@ -44,10 +42,10 @@ DOWNLOAD_NEEDED=false
 if [[ ! -f "$IMAGE_NAME" ]]; then
     DOWNLOAD_NEEDED=true
     echo "Image not found, will download..."
-elif [[ -f "$IMAGE_NAME.checksum" ]]; then
+elif [[ -f "$IMAGE_NAME.checksum.tmp" ]]; then
     echo "Verifying existing image checksum..."
     # Extract checksum for our specific file from the CHECKSUM file
-    EXPECTED_CHECKSUM=$(grep "Rocky-$VERSION-GenericCloud.latest.x86_64.qcow2" "$IMAGE_NAME.checksum" | sed 's/.*= //')
+    EXPECTED_CHECKSUM=$(grep "Rocky-$VERSION-GenericCloud.latest.x86_64.qcow2" "$IMAGE_NAME.checksum.tmp" | sed 's/.*= //')
     
     if [[ -n "$EXPECTED_CHECKSUM" ]]; then
         ACTUAL_CHECKSUM=$(sha256sum "$IMAGE_NAME" | awk '{print $1}')
@@ -77,9 +75,9 @@ if [[ "$DOWNLOAD_NEEDED" == "true" ]]; then
     fi
     
     # Verify downloaded image
-    if [[ -f "$IMAGE_NAME.checksum" ]]; then
+    if [[ -f "$IMAGE_NAME.checksum.tmp" ]]; then
         echo "Verifying downloaded image..."
-        EXPECTED_CHECKSUM=$(grep "Rocky-$VERSION-GenericCloud.latest.x86_64.qcow2" "$IMAGE_NAME.checksum" | sed 's/.*= //')
+        EXPECTED_CHECKSUM=$(grep "Rocky-$VERSION-GenericCloud.latest.x86_64.qcow2" "$IMAGE_NAME.checksum.tmp" | sed 's/.*= //')
         if [[ -n "$EXPECTED_CHECKSUM" ]]; then
             ACTUAL_CHECKSUM=$(sha256sum "$IMAGE_NAME" | awk '{print $1}')
             if [[ "$EXPECTED_CHECKSUM" != "$ACTUAL_CHECKSUM" ]]; then
@@ -93,13 +91,16 @@ if [[ "$DOWNLOAD_NEEDED" == "true" ]]; then
     fi
 fi
 
+# Clean up temporary checksum file
+rm -f "$IMAGE_NAME.checksum.tmp"
+
 # Create working copy
 echo "Creating working copy..."
 cp "$IMAGE_NAME" "$OUTPUT_NAME.tmp"
 
 # Install qemu-guest-agent using qimi (temporary mount)
 echo "Installing qemu-guest-agent..."
-qimi exec "$OUTPUT_NAME.tmp" /bin/bash -c "
+sudo "$QIMI_PATH" exec "$OUTPUT_NAME.tmp" -- /bin/bash -c "
     $PKG_MGR update -y
     $PKG_MGR install -y qemu-guest-agent
     systemctl enable qemu-guest-agent

@@ -4,21 +4,19 @@
 
 set -e
 
+# Source qimi installer
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/../common/install-qimi.sh"
+
 # Get codename from first argument, default to noble
 CODENAME="${1:-noble}"
 
 # Configuration
 UBUNTU_URL="${MIRROR:-https://cloud-images.ubuntu.com}/$CODENAME/current/$CODENAME-server-cloudimg-amd64.img"
-IMAGE_NAME="ubuntu-$CODENAME-cloud.img"
+IMAGE_NAME="$CODENAME-server-cloudimg-amd64.img"
 OUTPUT_NAME="$CODENAME-server-cloudimg-amd64-qa.img"
 
 echo "Setting up Ubuntu $CODENAME cloud image with qemu-guest-agent using qimi..."
-
-# Check if running as root
-if [[ $EUID -ne 0 ]]; then
-    echo "Error: This script must be run as root"
-    exit 1
-fi
 
 # Download Ubuntu cloud image if it doesn't exist
 if [[ ! -f "$IMAGE_NAME" ]]; then
@@ -34,7 +32,7 @@ cp "$IMAGE_NAME" "$OUTPUT_NAME.tmp"
 
 # Install qemu-guest-agent using qimi (temporary mount)
 echo "Installing qemu-guest-agent..."
-qimi exec "$OUTPUT_NAME.tmp" /bin/bash -c "
+sudo "$QIMI_PATH" exec "$OUTPUT_NAME.tmp" -- /bin/bash -c "
     apt-get update
     apt-get install -y qemu-guest-agent
     systemctl enable qemu-guest-agent
