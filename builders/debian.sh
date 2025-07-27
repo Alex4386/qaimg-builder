@@ -47,7 +47,7 @@ cp "$IMAGE_NAME" "$OUTPUT_NAME.tmp"
 
 # Install qemu-guest-agent using qimi (temporary mount)
 echo "Installing qemu-guest-agent..."
-sudo "$QIMI_PATH" exec "$OUTPUT_NAME.tmp" -- /bin/bash -c "
+sudo "$QIMI_PATH" exec "$OUTPUT_NAME.tmp" --nameserver 1.1.1.1 -- /bin/bash -c "
     apt-get update
     apt-get install -y qemu-guest-agent
     systemctl enable qemu-guest-agent
