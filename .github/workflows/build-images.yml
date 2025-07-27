@@ -1,0 +1,118 @@
+name: Build Cloud Images
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'builders/**'
+      - 'common/**'
+      - '.github/workflows/build-images.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'builders/**'
+      - 'common/**'
+      - '.github/workflows/build-images.yml'
+  workflow_dispatch:
+
+jobs:
+  build-ubuntu:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        codename: [noble, jammy, focal]
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y qemu-utils parted wget
+    
+    - name: Build Ubuntu ${{ matrix.codename }} image
+      run: |
+        cd builders
+        chmod +x ubuntu.sh
+        ./ubuntu.sh ${{ matrix.codename }}
+    
+    - name: Upload Ubuntu ${{ matrix.codename }} artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ubuntu-${{ matrix.codename }}-qa-image
+        path: builders/${{ matrix.codename }}-server-cloudimg-amd64-qa.img
+        retention-days: 30
+
+  build-debian:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        codename: [bookworm, bullseye, trixie]
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y qemu-utils parted wget
+    
+    - name: Build Debian ${{ matrix.codename }} image
+      run: |
+        cd builders
+        chmod +x debian.sh
+        ./debian.sh ${{ matrix.codename }}
+    
+    - name: Upload Debian ${{ matrix.codename }} artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: debian-${{ matrix.codename }}-qa-image
+        path: builders/debian-${{ matrix.codename }}-generic-amd64-qa.qcow2
+        retention-days: 30
+
+  build-rocky:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        version: [8, 9]
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y qemu-utils parted wget
+    
+    - name: Build Rocky Linux ${{ matrix.version }} image
+      run: |
+        cd builders
+        chmod +x rocky.sh
+        ./rocky.sh ${{ matrix.version }}
+    
+    - name: Upload Rocky Linux ${{ matrix.version }} artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: rocky-${{ matrix.version }}-qa-image
+        path: builders/Rocky-${{ matrix.version }}-GenericCloud-Base.latest.x86_64-qa.qcow2
+        retention-days: 30
+
+  build-arch:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y qemu-utils parted wget
+    
+    - name: Build Arch Linux image
+      run: |
+        cd builders
+        chmod +x arch.sh
+        ./arch.sh
+    
+    - name: Upload Arch Linux artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: arch-linux-qa-image
+        path: builders/Arch-Linux-x86_64-cloudimg-qa.qcow2
+        retention-days: 30
