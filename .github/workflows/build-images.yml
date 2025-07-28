@@ -65,7 +65,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: debian-${{ matrix.codename }}-qa-image
-        path: builders/debian-${{ matrix.codename }}-generic-amd64-qa.qcow2
+        path: builders/${{ matrix.codename }}-generic-amd64-qa.qcow2
         retention-days: 30
 
   build-rocky:
