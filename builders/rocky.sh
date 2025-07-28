@@ -45,7 +45,7 @@ if [[ ! -f "$IMAGE_NAME" ]]; then
 elif [[ -f "$IMAGE_NAME.checksum.tmp" ]]; then
     echo "Verifying existing image checksum..."
     # Extract checksum for our specific file from the CHECKSUM file
-    EXPECTED_CHECKSUM=$(grep "Rocky-$VERSION-GenericCloud.latest.x86_64.qcow2" "$IMAGE_NAME.checksum.tmp" | sed 's/.*= //')
+    EXPECTED_CHECKSUM=$(grep "^SHA256 (Rocky-$VERSION-GenericCloud.latest.x86_64.qcow2)" "$IMAGE_NAME.checksum.tmp" | sed 's/.*= //')
     
     if [[ -n "$EXPECTED_CHECKSUM" ]]; then
         ACTUAL_CHECKSUM=$(sha256sum "$IMAGE_NAME" | awk '{print $1}')
@@ -77,7 +77,7 @@ if [[ "$DOWNLOAD_NEEDED" == "true" ]]; then
     # Verify downloaded image
     if [[ -f "$IMAGE_NAME.checksum.tmp" ]]; then
         echo "Verifying downloaded image..."
-        EXPECTED_CHECKSUM=$(grep "Rocky-$VERSION-GenericCloud.latest.x86_64.qcow2" "$IMAGE_NAME.checksum.tmp" | sed 's/.*= //')
+        EXPECTED_CHECKSUM=$(grep "^SHA256 (Rocky-$VERSION-GenericCloud.latest.x86_64.qcow2)" "$IMAGE_NAME.checksum.tmp" | sed 's/.*= //')
         if [[ -n "$EXPECTED_CHECKSUM" ]]; then
             ACTUAL_CHECKSUM=$(sha256sum "$IMAGE_NAME" | awk '{print $1}')
             if [[ "$EXPECTED_CHECKSUM" != "$ACTUAL_CHECKSUM" ]]; then
