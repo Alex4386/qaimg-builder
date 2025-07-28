@@ -31,6 +31,13 @@ DEBIAN_URL="${MIRROR:-https://cloud.debian.org/images/cloud}/$CODENAME/latest/de
 IMAGE_NAME="$CODENAME-generic-amd64.qcow2"
 OUTPUT_NAME="$CODENAME-generic-amd64-qa.qcow2"
 
+# Since the trixie, the path is now different. we need to handle that
+case "$CODENAME" in
+    "trixie")
+        DEBIAN_URL="${MIRROR:-https://cloud.debian.org/images/cloud}/$CODENAME/daily/latest/debian-$VERSION-generic-amd64-daily.qcow2"
+        ;;
+esac
+
 echo "Setting up Debian $CODENAME cloud image with qemu-guest-agent using qimi..."
 
 # Download Debian cloud image if it doesn't exist
