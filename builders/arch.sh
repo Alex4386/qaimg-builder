@@ -74,16 +74,16 @@ rm -f "$IMAGE_NAME.sha256.tmp"
 
 # Create working copy
 echo "Creating working copy..."
-cp "$IMAGE_NAME" "$OUTPUT_NAME.tmp"
+cp "$IMAGE_NAME" "temp_$OUTPUT_NAME"
 
 # Install qemu-guest-agent using qimi (temporary mount)
 echo "Installing qemu-guest-agent..."
-sudo "$QIMI_PATH" exec -i "$OUTPUT_NAME.tmp" --nameserver 1.1.1.1 -- /bin/bash -c "
+sudo "$QIMI_PATH" exec -i "temp_$OUTPUT_NAME" --nameserver 1.1.1.1 -- /bin/bash -c "
     pacman -Sy --noconfirm qemu-guest-agent
     systemctl enable qemu-guest-agent
 "
 
 # Move to final name
-mv "$OUTPUT_NAME.tmp" "$OUTPUT_NAME"
+mv "temp_$OUTPUT_NAME" "$OUTPUT_NAME"
 
 echo "Done! Modified image saved as: $OUTPUT_NAME"
