@@ -23,7 +23,7 @@ mkdir -p "$PROJECT_ROOT/bin"
 
 # Download qimi from GitHub releases
 echo "Downloading qimi..."
-wget -O "$PROJECT_ROOT/bin/qimi" "https://github.com/PacketStream-LLC/qimi/releases/download/v0.0.1/qimi-linux-amd64"
+wget -O "$PROJECT_ROOT/bin/qimi" "https://github.com/PacketStream-LLC/qimi/releases/download/v0.0.2/qimi-linux-amd64"
 
 # Make it executable
 chmod +x "$PROJECT_ROOT/bin/qimi"
