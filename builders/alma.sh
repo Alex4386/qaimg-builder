@@ -15,7 +15,7 @@ PARTITION="4"
 # Map version to package manager
 case "$VERSION" in
     "9") PKG_MGR="dnf"; PARTITION="4" ;;
-    "8") PKG_MGR="dnf"; PARTITION="5" ;;
+    "8") PKG_MGR="dnf"; PARTITION="4" ;;
     *) 
         echo "Error: Unsupported AlmaLinux version '$VERSION'"
         echo "Supported: 8, 9"

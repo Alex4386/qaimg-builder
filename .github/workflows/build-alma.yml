@@ -16,7 +16,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-rocky:
+  build-alma:
     runs-on: ubuntu-latest
     strategy:
       matrix:
