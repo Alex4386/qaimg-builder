@@ -5,9 +5,9 @@ This is a collection of scripts to build cloudinit images with `qemu-guest-agent
 ## Build Status
 
 ### Global Build (weekly)
-| Status | Download |
-|--------|----------|
-| [![Build Release](https://github.com/Alex4386/qaimg-builder/actions/workflows/release.yml/badge.svg)](https://github.com/Alex4386/qaimg-builder/actions/workflows/release.yml) | [Latest Artifacts](https://github.com/Alex4386/qaimg-builder/actions/workflows/release.yml) |
+| Status | Download | Artifacts |
+|--------|----------|-----------|
+| [![Build Release](https://github.com/Alex4386/qaimg-builder/actions/workflows/release.yml/badge.svg)](https://github.com/Alex4386/qaimg-builder/actions/workflows/release.yml) | [Latest Release](https://github.com/Alex4386/qaimg-builder/releases/latest) | [Latest Artifacts](https://github.com/Alex4386/qaimg-builder/actions/workflows/release.yml) |
 
 ### Nightly Builds per Distribution
 | Distribution | Status | Download |
