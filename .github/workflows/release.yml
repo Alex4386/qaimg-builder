@@ -86,7 +86,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: rocky-${{ matrix.version }}-qa-image
-        path: builders/Rocky-${{ matrix.version }}-GenericCloud-Base-latest-qa.x86_64.qcow2
+        path: builders/rockylinux-${{ matrix.version }}-GenericCloud.latest-qa.x86_64.qcow2
         retention-days: 1
 
   build-alma:
