@@ -153,9 +153,17 @@ jobs:
       with:
         path: release-artifacts
 
-    - name: Create checksums
+    - name: Compress and create checksums
       run: |
         cd release-artifacts
+        # Compress qcow2 files using qemu-img
+        find . -type f -name "*.qcow2" | while read file; do
+          echo "Compressing $file with qemu-img..."
+          qemu-img convert -c -O qcow2 "$file" "${file}.compressed"
+          mv "${file}.compressed" "$file"
+        done
+        
+        # Create checksums for all image files
         find . -type f -name "*.img" -o -name "*.qcow2" | while read file; do
           sha256sum "$file" > "$file.sha256"
         done
