@@ -39,5 +39,5 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: rocky-${{ matrix.version }}-qa-image
-        path: builders/Rocky-${{ matrix.version }}-GenericCloud-Base.latest.x86_64-qa.qcow2
+        path: builders/rockylinux-${{ matrix.version }}-GenericCloud.latest-qa.qcow2
         retention-days: 30
