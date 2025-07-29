@@ -152,6 +152,12 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         path: release-artifacts
+    
+    # Install qemu-img for compression and checksum generation
+    - name: Install qemu-utils
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y qemu-utils
 
     - name: Compress and create checksums
       run: |
