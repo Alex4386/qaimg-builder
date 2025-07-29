@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Simple script to download Rocky Linux cloud image and install qemu-guest-agent using qimi
+# Simple script to download Alma Linux cloud image and install qemu-guest-agent using qimi
 
 set -e
 
@@ -17,19 +17,19 @@ case "$VERSION" in
     "9") PKG_MGR="dnf"; PARTITION="4" ;;
     "8") PKG_MGR="dnf"; PARTITION="5" ;;
     *) 
-        echo "Error: Unsupported Rocky Linux version '$VERSION'"
-        echo "Supported: 7, 8, 9"
+        echo "Error: Unsupported AlmaLinux version '$VERSION'"
+        echo "Supported: 8, 9"
         exit 1
         ;;
 esac
 
 # Configuration
-ROCKY_URL="${MIRROR:-https://repo.almalinux.org/almalinux}/$VERSION/cloud/x86_64/images/Rocky-$VERSION-GenericCloud.latest.x86_64.qcow2"
+ALMA_URL="${MIRROR:-https://repo.almalinux.org/almalinux}/$VERSION/cloud/x86_64/images/AlmaLinux-$VERSION-GenericCloud-latest.x86_64.qcow2"
 CHECKSUM_URL="${MIRROR:-https://repo.almalinux.org/almalinux}/$VERSION/cloud/x86_64/images/CHECKSUM"
 IMAGE_NAME="AlmaLinux-$VERSION-GenericCloud-latest.x86_64.qcow2"
 OUTPUT_NAME="AlmaLinux-$VERSION-GenericCloud-latest-qa.x86_64.qcow2"
 
-echo "Setting up Rocky Linux $VERSION cloud image with qemu-guest-agent using qimi..."
+echo "Setting up AlmaLinux $VERSION cloud image with qemu-guest-agent using qimi..."
 
 # Download checksum file (temporary)
 echo "Downloading checksum file..."
@@ -37,7 +37,7 @@ if ! wget -q -O "$IMAGE_NAME.checksum.tmp" "$CHECKSUM_URL"; then
     echo "Warning: Could not download checksum file"
 fi
 
-# Download Rocky Linux cloud image if it doesn't exist or checksum differs
+# Download Alma Linux cloud image if it doesn't exist or checksum differs
 DOWNLOAD_NEEDED=false
 
 if [[ ! -f "$IMAGE_NAME" ]]; then
@@ -46,8 +46,8 @@ if [[ ! -f "$IMAGE_NAME" ]]; then
 elif [[ -f "$IMAGE_NAME.checksum.tmp" ]]; then
     echo "Verifying existing image checksum..."
     # Extract checksum for our specific file from the CHECKSUM file
-    EXPECTED_CHECKSUM=$(grep "^SHA256 (Rocky-$VERSION-GenericCloud.latest.x86_64.qcow2)" "$IMAGE_NAME.checksum.tmp" | sed 's/.*= //')
-    
+    EXPECTED_CHECKSUM=$(grep "^SHA256 (AlmaLinux-$VERSION-GenericCloud-latest.x86_64.qcow2)" "$IMAGE_NAME.checksum.tmp" | sed 's/.*= //')
+
     if [[ -n "$EXPECTED_CHECKSUM" ]]; then
         ACTUAL_CHECKSUM=$(sha256sum "$IMAGE_NAME" | awk '{print $1}')
         
@@ -60,7 +60,7 @@ elif [[ -f "$IMAGE_NAME.checksum.tmp" ]]; then
             echo "Checksum verified - using existing image"
         fi
     else
-        echo "Could not find checksum for Rocky-$VERSION-GenericCloud.latest.x86_64.qcow2 in CHECKSUM file"
+        echo "Could not find checksum for AlmaLinux-$VERSION-GenericCloud-latest.x86_64.qcow2 in CHECKSUM file"
         echo "Using existing image (no checksum found to verify)"
     fi
 else
@@ -68,17 +68,17 @@ else
 fi
 
 if [[ "$DOWNLOAD_NEEDED" == "true" ]]; then
-    echo "Downloading Rocky Linux $VERSION cloud image..."
-    if ! wget -O "$IMAGE_NAME" "$ROCKY_URL"; then
-        echo "Failed to download Rocky Linux cloud image from $ROCKY_URL"
-        echo "Available versions: 7, 8, 9"
+    echo "Downloading AlmaLinux $VERSION cloud image..."
+    if ! wget -O "$IMAGE_NAME" "$ALMA_URL"; then
+        echo "Failed to download AlmaLinux cloud image from $ALMA_URL"
+        echo "Available versions: 8, 9"
         exit 1
     fi
     
     # Verify downloaded image
     if [[ -f "$IMAGE_NAME.checksum.tmp" ]]; then
         echo "Verifying downloaded image..."
-        EXPECTED_CHECKSUM=$(grep "^SHA256 (Rocky-$VERSION-GenericCloud.latest.x86_64.qcow2)" "$IMAGE_NAME.checksum.tmp" | sed 's/.*= //')
+        EXPECTED_CHECKSUM=$(grep "^SHA256 (AlmaLinux-$VERSION-GenericCloud-latest.x86_64.qcow2)" "$IMAGE_NAME.checksum.tmp" | sed 's/.*= //')
         if [[ -n "$EXPECTED_CHECKSUM" ]]; then
             ACTUAL_CHECKSUM=$(sha256sum "$IMAGE_NAME" | awk '{print $1}')
             if [[ "$EXPECTED_CHECKSUM" != "$ACTUAL_CHECKSUM" ]]; then
@@ -101,7 +101,7 @@ cp "$IMAGE_NAME" "temp_$OUTPUT_NAME"
 
 # Install qemu-guest-agent using qimi (temporary mount)
 echo "Installing qemu-guest-agent..."
-sudo "$QIMI_PATH" exec "temp_$OUTPUT_NAME" --nameserver 1.1.1.1 --partition 4 -- /bin/bash -c "
+sudo "$QIMI_PATH" exec "temp_$OUTPUT_NAME" --nameserver 1.1.1.1 --partition $PARTITION -- /bin/bash -c "
     $PKG_MGR update -y
     $PKG_MGR install -y qemu-guest-agent
     systemctl enable qemu-guest-agent
