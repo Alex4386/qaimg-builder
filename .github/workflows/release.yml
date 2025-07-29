@@ -9,7 +9,9 @@ on:
       tag_name:
         description: 'Tag name for release (format: vYYYY.MM.DD)'
         required: false
-
+  schedule:
+    - cron: "0 0 * * */7" # Every 7 days at 00:00 UTC
+  
 jobs:
   build-ubuntu:
     runs-on: ubuntu-latest
