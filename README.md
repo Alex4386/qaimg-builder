@@ -4,6 +4,12 @@ This is a collection of scripts to build cloudinit images with `qemu-guest-agent
 
 ## Build Status
 
+### Global Build (weekly)
+| Status | Download |
+|--------|----------|
+| [![Build Release](https://github.com/Alex4386/qaimg-builder/actions/workflows/release.yml/badge.svg)](https://github.com/Alex4386/qaimg-builder/actions/workflows/release.yml) | [Latest Artifacts](https://github.com/Alex4386/qaimg-builder/actions/workflows/release.yml) |
+
+### Nightly Builds per Distribution
 | Distribution | Status | Download |
 |--------------|--------|----------|
 | Ubuntu | [![Build Ubuntu](https://github.com/Alex4386/qaimg-builder/actions/workflows/build-ubuntu.yml/badge.svg)](https://github.com/Alex4386/qaimg-builder/actions/workflows/build-ubuntu.yml) | [Latest Artifacts](https://github.com/Alex4386/qaimg-builder/actions/workflows/build-ubuntu.yml) |
@@ -11,6 +17,8 @@ This is a collection of scripts to build cloudinit images with `qemu-guest-agent
 | Rocky Linux | [![Build Rocky](https://github.com/Alex4386/qaimg-builder/actions/workflows/build-rocky.yml/badge.svg)](https://github.com/Alex4386/qaimg-builder/actions/workflows/build-rocky.yml) | [Latest Artifacts](https://github.com/Alex4386/qaimg-builder/actions/workflows/build-rocky.yml) |
 | AlmaLinux | [![Build AlmaLinux](https://github.com/Alex4386/qaimg-builder/actions/workflows/build-alma.yml/badge.svg)](https://github.com/Alex4386/qaimg-builder/actions/workflows/build-alma.yml) | [Latest Artifacts](https://github.com/Alex4386/qaimg-builder/actions/workflows/build-alma.yml) |
 | Arch Linux | [![Build Arch](https://github.com/Alex4386/qaimg-builder/actions/workflows/build-arch.yml/badge.svg)](https://github.com/Alex4386/qaimg-builder/actions/workflows/build-arch.yml) | [Latest Artifacts](https://github.com/Alex4386/qaimg-builder/actions/workflows/build-arch.yml) |
+
+
 
 ## Usage
 
