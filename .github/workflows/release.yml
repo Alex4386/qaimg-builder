@@ -238,9 +238,16 @@ jobs:
         for artifact_dir in */; do
           for file in "$artifact_dir"*.{img,qcow2,sha256}; do
             if [[ -f "$file" ]]; then
+              # Check file size (2GB = 2147483648 bytes)
+              file_size=$(stat -c%s "$file")
               asset_name=$(basename "$file")
-              echo "Uploading $asset_name..."
-              gh release upload "${{ steps.set_tag.outputs.tag_name }}" "$file" --clobber
+              
+              if [[ $file_size -gt 2147483648 ]]; then
+                echo "Skipping $asset_name (size: $file_size bytes) - larger than 2GB"
+              else
+                echo "Uploading $asset_name (size: $file_size bytes)..."
+                gh release upload "${{ steps.set_tag.outputs.tag_name }}" "$file" --clobber
+              fi
             fi
           done
         done
