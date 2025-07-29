@@ -16,7 +16,6 @@ PARTITION="4"
 case "$VERSION" in
     "9") PKG_MGR="dnf"; PARTITION="4" ;;
     "8") PKG_MGR="dnf"; PARTITION="5" ;;
-    "7") PKG_MGR="yum" ;;
     *) 
         echo "Error: Unsupported Rocky Linux version '$VERSION'"
         echo "Supported: 7, 8, 9"
@@ -25,10 +24,10 @@ case "$VERSION" in
 esac
 
 # Configuration
-ROCKY_URL="${MIRROR:-https://download.rockylinux.org/pub/rocky}/$VERSION/images/x86_64/Rocky-$VERSION-GenericCloud.latest.x86_64.qcow2"
-CHECKSUM_URL="${MIRROR:-https://download.rockylinux.org/pub/rocky}/$VERSION/images/x86_64/CHECKSUM"
-IMAGE_NAME="rockylinux-$VERSION-GenericCloud.latest.qcow2"
-OUTPUT_NAME="rockylinux-$VERSION-GenericCloud.latest-qa.qcow2"
+ROCKY_URL="${MIRROR:-https://repo.almalinux.org/almalinux}/$VERSION/cloud/x86_64/images/Rocky-$VERSION-GenericCloud.latest.x86_64.qcow2"
+CHECKSUM_URL="${MIRROR:-https://repo.almalinux.org/almalinux}/$VERSION/cloud/x86_64/images/CHECKSUM"
+IMAGE_NAME="AlmaLinux-$VERSION-GenericCloud-latest.x86_64.qcow2"
+OUTPUT_NAME="AlmaLinux-$VERSION-GenericCloud-latest-qa.x86_64.qcow2"
 
 echo "Setting up Rocky Linux $VERSION cloud image with qemu-guest-agent using qimi..."
 

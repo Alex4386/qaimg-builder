@@ -1,0 +1,43 @@
+name: Build Ubuntu
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'builders/**'
+      - 'common/**'
+      - '.github/workflows/build-ubuntu.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'builders/**'
+      - 'common/**'
+      - '.github/workflows/build-ubuntu.yml'
+  workflow_dispatch:
+
+jobs:
+  build-ubuntu:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        codename: [noble, jammy, focal]
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y qemu-utils parted wget
+    
+    - name: Build Ubuntu ${{ matrix.codename }} image
+      run: |
+        cd builders
+        chmod +x ubuntu.sh
+        ./ubuntu.sh ${{ matrix.codename }}
+    
+    - name: Upload Ubuntu ${{ matrix.codename }} artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ubuntu-${{ matrix.codename }}-qa-image
+        path: builders/${{ matrix.codename }}-server-cloudimg-amd64-qa.img
+        retention-days: 30

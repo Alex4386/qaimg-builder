@@ -1,0 +1,40 @@
+name: Build Debian
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'builders/**'
+      - 'common/**'
+      - '.github/workflows/build-arch.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'builders/**'
+      - 'common/**'
+      - '.github/workflows/build-arch.yml'
+  workflow_dispatch:
+
+jobs:
+  build-arch:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y qemu-utils parted wget
+    
+    - name: Build Arch Linux image
+      run: |
+        cd builders
+        chmod +x arch.sh
+        ./arch.sh
+    
+    - name: Upload Arch Linux artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: arch-linux-qa-image
+        path: builders/Arch-Linux-x86_64-cloudimg-qa.qcow2
+        retention-days: 30

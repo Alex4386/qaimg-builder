@@ -1,0 +1,43 @@
+name: Build RockyLinux
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'builders/**'
+      - 'common/**'
+      - '.github/workflows/build-rocky.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'builders/**'
+      - 'common/**'
+      - '.github/workflows/build-rocky.yml'
+  workflow_dispatch:
+
+jobs:
+  build-rocky:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        version: [8, 9]
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y qemu-utils parted wget
+    
+    - name: Build Rocky Linux ${{ matrix.version }} image
+      run: |
+        cd builders
+        chmod +x rocky.sh
+        ./rocky.sh ${{ matrix.version }}
+    
+    - name: Upload Rocky Linux ${{ matrix.version }} artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: rocky-${{ matrix.version }}-qa-image
+        path: builders/Rocky-${{ matrix.version }}-GenericCloud-Base.latest.x86_64-qa.qcow2
+        retention-days: 30
