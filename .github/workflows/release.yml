@@ -1,0 +1,232 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Tag name for release (format: vYYYY.MM.DD)'
+        required: false
+
+jobs:
+  build-ubuntu:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        codename: [noble, jammy, focal]
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y qemu-utils parted wget
+    
+    - name: Build Ubuntu ${{ matrix.codename }} image
+      run: |
+        cd builders
+        chmod +x ubuntu.sh
+        ./ubuntu.sh ${{ matrix.codename }}
+    
+    - name: Upload Ubuntu ${{ matrix.codename }} artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ubuntu-${{ matrix.codename }}-qa-image
+        path: builders/${{ matrix.codename }}-server-cloudimg-amd64-qa.img
+        retention-days: 1
+
+  build-debian:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        codename: [bookworm, bullseye]
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y qemu-utils parted wget
+    
+    - name: Build Debian ${{ matrix.codename }} image
+      run: |
+        cd builders
+        chmod +x debian.sh
+        ./debian.sh ${{ matrix.codename }}
+    
+    - name: Upload Debian ${{ matrix.codename }} artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: debian-${{ matrix.codename }}-qa-image
+        path: builders/debian-${{ matrix.codename }}-generic-amd64-qa.qcow2
+        retention-days: 1
+
+  build-rocky:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        version: ['9', '8']
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y qemu-utils parted wget
+    
+    - name: Build Rocky Linux ${{ matrix.version }} image
+      run: |
+        cd builders
+        chmod +x rocky.sh
+        ./rocky.sh ${{ matrix.version }}
+    
+    - name: Upload Rocky Linux ${{ matrix.version }} artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: rocky-${{ matrix.version }}-qa-image
+        path: builders/Rocky-${{ matrix.version }}-GenericCloud-Base-latest-qa.x86_64.qcow2
+        retention-days: 1
+
+  build-alma:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        version: ['9', '8']
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y qemu-utils parted wget
+    
+    - name: Build AlmaLinux ${{ matrix.version }} image
+      run: |
+        cd builders
+        chmod +x alma.sh
+        ./alma.sh ${{ matrix.version }}
+    
+    - name: Upload AlmaLinux ${{ matrix.version }} artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: alma-${{ matrix.version }}-qa-image
+        path: builders/AlmaLinux-${{ matrix.version }}-GenericCloud-latest-qa.x86_64.qcow2
+        retention-days: 1
+
+  build-arch:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y qemu-utils parted wget
+    
+    - name: Build Arch Linux image
+      run: |
+        cd builders
+        chmod +x arch.sh
+        ./arch.sh
+    
+    - name: Upload Arch Linux artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: arch-qa-image
+        path: builders/Arch-Linux-x86_64-cloudimg-qa.qcow2
+        retention-days: 1
+
+  create-release:
+    needs: [build-ubuntu, build-debian, build-rocky, build-alma, build-arch]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: release-artifacts
+
+    - name: Create checksums
+      run: |
+        cd release-artifacts
+        find . -type f -name "*.img" -o -name "*.qcow2" | while read file; do
+          sha256sum "$file" > "$file.sha256"
+        done
+
+    - name: Set release tag
+      id: set_tag
+      run: |
+        if [[ "${{ github.event_name }}" == "push" ]]; then
+          echo "tag_name=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+        elif [[ -n "${{ github.event.inputs.tag_name }}" ]]; then
+          echo "tag_name=${{ github.event.inputs.tag_name }}" >> $GITHUB_OUTPUT
+        else
+          # Generate base tag with current date
+          base_tag="v$(date +%Y.%m.%d)"
+          
+          # Check if tag already exists
+          if gh release view "$base_tag" >/dev/null 2>&1; then
+            # Find the next available number
+            counter=2
+            while gh release view "${base_tag}-${counter}" >/dev/null 2>&1; do
+              ((counter++))
+            done
+            echo "tag_name=${base_tag}-${counter}" >> $GITHUB_OUTPUT
+          else
+            echo "tag_name=${base_tag}" >> $GITHUB_OUTPUT
+          fi
+        fi
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ steps.set_tag.outputs.tag_name }}
+        release_name: Release ${{ steps.set_tag.outputs.tag_name }}
+        body: |
+          ## Cloud Images with qemu-guest-agent
+
+          This release contains cloud images with qemu-guest-agent pre-installed for better integration with virtualization platforms.
+
+          ### Supported Distributions
+          - Ubuntu: Noble (24.04), Jammy (22.04), Focal (20.04)
+          - Debian: Bookworm (12), Bullseye (11)
+          - Rocky Linux: 9, 8
+          - AlmaLinux: 9, 8
+          - Arch Linux: Latest
+
+          ### Usage
+          These images can be used with any virtualization platform that supports qcow2 format, including:
+          - Proxmox VE
+          - OpenStack
+          - KVM/QEMU
+          - And more...
+
+          ### Checksums
+          SHA256 checksums are provided for each image file.
+        draft: false
+        prerelease: false
+
+    - name: Upload Release Assets
+      run: |
+        cd release-artifacts
+        for artifact_dir in */; do
+          for file in "$artifact_dir"*.{img,qcow2,sha256}; do
+            if [[ -f "$file" ]]; then
+              asset_name=$(basename "$file")
+              echo "Uploading $asset_name..."
+              gh release upload "${{ steps.set_tag.outputs.tag_name }}" "$file" --clobber
+            fi
+          done
+        done
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
