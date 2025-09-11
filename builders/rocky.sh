@@ -109,6 +109,7 @@ sudo "$QIMI_PATH" exec "temp_$OUTPUT_NAME" --nameserver 1.1.1.1 --partition $PAR
     $PKG_MGR install -y qemu-guest-agent
     systemctl enable qemu-guest-agent
     sed -i 's/SELINUX=enforcing/SELINUX=permissive/' /etc/selinux/config
+    cat /etc/selinux/config
     touch /.autorelabel
 "
 
