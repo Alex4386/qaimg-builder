@@ -11,10 +11,12 @@ source "$SCRIPT_DIR/../common/install-qimi.sh"
 # Get version from first argument, default to 9
 VERSION="${1:-9}"
 PARTITION="4"
+FILE_SUFFIX=""
 
 # Map version to package manager
 case "$VERSION" in
-    "10"|"9") PKG_MGR="dnf"; PARTITION="4" ;;
+    "10") PKG_MGR="dnf"; PARTITION="4"; FILE_SUFFIX="-Base" ;; 
+    "9") PKG_MGR="dnf"; PARTITION="4" ;;
     "8") PKG_MGR="dnf"; PARTITION="5" ;;
     "7") PKG_MGR="yum" ;;
     *) 
@@ -25,7 +27,7 @@ case "$VERSION" in
 esac
 
 # Configuration
-ROCKY_URL="${MIRROR:-https://download.rockylinux.org/pub/rocky}/$VERSION/images/x86_64/Rocky-$VERSION-GenericCloud.latest.x86_64.qcow2"
+ROCKY_URL="${MIRROR:-https://download.rockylinux.org/pub/rocky}/$VERSION/images/x86_64/Rocky-$VERSION-GenericCloud$FILE_SUFFIX.latest.x86_64.qcow2"
 CHECKSUM_URL="${MIRROR:-https://download.rockylinux.org/pub/rocky}/$VERSION/images/x86_64/CHECKSUM"
 IMAGE_NAME="rockylinux-$VERSION-GenericCloud.latest.qcow2"
 OUTPUT_NAME="rockylinux-$VERSION-GenericCloud.latest-qa.qcow2"
