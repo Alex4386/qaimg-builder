@@ -14,12 +14,12 @@ PARTITION="4"
 
 # Map version to package manager
 case "$VERSION" in
-    "9") PKG_MGR="dnf"; PARTITION="4" ;;
+    "10"|"9") PKG_MGR="dnf"; PARTITION="4" ;;
     "8") PKG_MGR="dnf"; PARTITION="5" ;;
     "7") PKG_MGR="yum" ;;
     *) 
         echo "Error: Unsupported Rocky Linux version '$VERSION'"
-        echo "Supported: 7, 8, 9"
+        echo "Supported: 7, 8, 9, 10"
         exit 1
         ;;
 esac
