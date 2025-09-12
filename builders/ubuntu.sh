@@ -11,6 +11,12 @@ source "$SCRIPT_DIR/../common/install-qimi.sh"
 # Get codename from first argument, default to noble
 CODENAME="${1:-noble}"
 
+# if $2 is nobuild, don't build
+NOBUILD=false
+if [[ "$2" == "nobuild" ]]; then
+    NOBUILD=true
+fi
+
 # Configuration
 UBUNTU_URL="${MIRROR:-https://cloud-images.ubuntu.com}/$CODENAME/current/$CODENAME-server-cloudimg-amd64.img"
 IMAGE_NAME="$CODENAME-server-cloudimg-amd64.img"
@@ -24,6 +30,12 @@ if [[ ! -f "$IMAGE_NAME" ]]; then
     wget -O "$IMAGE_NAME" "$UBUNTU_URL"
 else
     echo "Using existing $IMAGE_NAME"
+fi
+
+# nobuild
+if [ "$NOBUILD" == "true" ]; then
+    echo "Skipping build for Rocky Linux"
+    exit 0
 fi
 
 # Create working copy

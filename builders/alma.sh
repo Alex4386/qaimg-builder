@@ -12,6 +12,12 @@ source "$SCRIPT_DIR/../common/install-qimi.sh"
 VERSION="${1:-9}"
 PARTITION="4"
 
+# if $2 is nobuild, don't build
+NOBUILD=false
+if [[ "$2" == "nobuild" ]]; then
+    NOBUILD=true
+fi
+
 # Map version to package manager
 case "$VERSION" in
     "10"|"9") PKG_MGR="dnf"; PARTITION="4" ;;
@@ -94,6 +100,10 @@ fi
 
 # Clean up temporary checksum file
 rm -f "$IMAGE_NAME.checksum.tmp"
+if [ "$NOBUILD" == "true" ]; then
+    echo "Skipping build for AlmaLinux $VERSION"
+    exit 0
+fi
 
 # Create working copy
 echo "Creating working copy..."

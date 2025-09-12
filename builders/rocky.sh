@@ -13,6 +13,12 @@ VERSION="${1:-9}"
 PARTITION="4"
 FILE_SUFFIX=""
 
+# if $2 is nobuild, don't build
+NOBUILD=false
+if [[ "$2" == "nobuild" ]]; then
+    NOBUILD=true
+fi
+
 # Map version to package manager
 case "$VERSION" in
     "10") PKG_MGR="dnf"; PARTITION="4"; FILE_SUFFIX="-Base" ;; 
@@ -97,6 +103,12 @@ fi
 
 # Clean up temporary checksum file
 rm -f "$IMAGE_NAME.checksum.tmp"
+
+# nobuild
+if [ "$NOBUILD" == "true" ]; then
+    echo "Skipping build for Rocky Linux"
+    exit 0
+fi
 
 # Create working copy
 echo "Creating working copy..."

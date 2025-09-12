@@ -22,6 +22,12 @@ if ! wget -q -O "$IMAGE_NAME.sha256.tmp" "$CHECKSUM_URL"; then
     echo "Warning: Could not download checksum file"
 fi
 
+# if $1 is nobuild, don't build
+NOBUILD=false
+if [[ "$1" == "nobuild" ]]; then
+    NOBUILD=true
+fi
+
 # Download Arch Linux cloud image if it doesn't exist or checksum differs
 DOWNLOAD_NEEDED=false
 
@@ -71,6 +77,12 @@ fi
 
 # Clean up temporary checksum file
 rm -f "$IMAGE_NAME.sha256.tmp"
+
+# nobuild
+if [ "$NOBUILD" == "true" ]; then
+    echo "Skipping build for Arch Linux"
+    exit 0
+fi
 
 # Create working copy
 echo "Creating working copy..."

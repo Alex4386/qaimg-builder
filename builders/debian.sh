@@ -11,6 +11,12 @@ source "$SCRIPT_DIR/../common/install-qimi.sh"
 # Get codename from first argument, default to bookworm
 CODENAME="${1:-bookworm}"
 
+# if $2 is nobuild, don't build
+NOBUILD=false
+if [[ "$2" == "nobuild" ]]; then
+    NOBUILD=true
+fi
+
 # Map codename to version number
 case "$CODENAME" in
     "trixie") VERSION="13" ;;
@@ -46,6 +52,12 @@ if [[ ! -f "$IMAGE_NAME" ]]; then
     wget -O "$IMAGE_NAME" "$DEBIAN_URL"
 else
     echo "Using existing $IMAGE_NAME"
+fi
+
+# nobuild
+if [ "$NOBUILD" == "true" ]; then
+    echo "Skipping build for Debian"
+    exit 0
 fi
 
 # Create working copy
