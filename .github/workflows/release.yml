@@ -154,25 +154,25 @@ jobs:
         path: release-artifacts
     
     # Install qemu-img for compression and checksum generation
-    - name: Install qemu-utils
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y qemu-utils
+    # - name: Install qemu-utils
+    #   run: |
+    #     sudo apt-get update
+    #     sudo apt-get install -y qemu-utils
 
-    - name: Compress and create checksums
-      run: |
-        cd release-artifacts
-        # Compress qcow2 files using qemu-img
-        find . -type f -name "*.qcow2" | while read file; do
-          echo "Compressing $file with qemu-img..."
-          qemu-img convert -c -O qcow2 "$file" "${file}.compressed"
-          mv "${file}.compressed" "$file"
-        done
+    # - name: Compress and create checksums
+    #   run: |
+    #     cd release-artifacts
+    #     # Compress qcow2 files using qemu-img
+    #     find . -type f -name "*.qcow2" | while read file; do
+    #       echo "Compressing $file with qemu-img..."
+    #       qemu-img convert -c -O qcow2 "$file" "${file}.compressed"
+    #       mv "${file}.compressed" "$file"
+    #     done
         
-        # Create checksums for all image files
-        find . -type f -name "*.img" -o -name "*.qcow2" | while read file; do
-          sha256sum "$file" > "$file.sha256"
-        done
+    #     # Create checksums for all image files
+    #     find . -type f -name "*.img" -o -name "*.qcow2" | while read file; do
+    #       sha256sum "$file" > "$file.sha256"
+    #     done
 
     - name: Set release tag
       id: set_tag
