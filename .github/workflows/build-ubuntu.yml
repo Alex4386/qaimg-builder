@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        codename: [resolute, noble, jammy, focal]
+        codename: [resolute, noble, jammy]
     steps:
     - uses: actions/checkout@v4
     

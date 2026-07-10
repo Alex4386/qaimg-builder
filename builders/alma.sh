@@ -52,7 +52,7 @@ if [[ ! -f "$IMAGE_NAME" ]]; then
 elif [[ -f "$IMAGE_NAME.checksum.tmp" ]]; then
     echo "Verifying existing image checksum..."
     # Extract checksum for our specific file from the CHECKSUM file
-    EXPECTED_CHECKSUM=$(grep "^SHA256 (AlmaLinux-$VERSION-GenericCloud-latest.x86_64.qcow2)" "$IMAGE_NAME.checksum.tmp" | sed 's/.*= //')
+    EXPECTED_CHECKSUM=$(grep " AlmaLinux-$VERSION-GenericCloud-latest.x86_64.qcow2$" "$IMAGE_NAME.checksum.tmp" | awk '{print $1}')
 
     if [[ -n "$EXPECTED_CHECKSUM" ]]; then
         ACTUAL_CHECKSUM=$(sha256sum "$IMAGE_NAME" | awk '{print $1}')
@@ -77,14 +77,14 @@ if [[ "$DOWNLOAD_NEEDED" == "true" ]]; then
     echo "Downloading AlmaLinux $VERSION cloud image..."
     if ! wget -O "$IMAGE_NAME" "$ALMA_URL"; then
         echo "Failed to download AlmaLinux cloud image from $ALMA_URL"
-        echo "Available versions: 8, 9"
+        echo "Available versions: 8, 9, 10"
         exit 1
     fi
     
     # Verify downloaded image
     if [[ -f "$IMAGE_NAME.checksum.tmp" ]]; then
         echo "Verifying downloaded image..."
-        EXPECTED_CHECKSUM=$(grep "^SHA256 (AlmaLinux-$VERSION-GenericCloud-latest.x86_64.qcow2)" "$IMAGE_NAME.checksum.tmp" | sed 's/.*= //')
+        EXPECTED_CHECKSUM=$(grep " AlmaLinux-$VERSION-GenericCloud-latest.x86_64.qcow2$" "$IMAGE_NAME.checksum.tmp" | awk '{print $1}')
         if [[ -n "$EXPECTED_CHECKSUM" ]]; then
             ACTUAL_CHECKSUM=$(sha256sum "$IMAGE_NAME" | awk '{print $1}')
             if [[ "$EXPECTED_CHECKSUM" != "$ACTUAL_CHECKSUM" ]]; then

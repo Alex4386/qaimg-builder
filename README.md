@@ -33,9 +33,9 @@ chmod +x download-prebuilt.sh
 
 # Download specific distribution images
 ./download-prebuilt.sh ubuntu noble          # Ubuntu Noble (24.04)
-./download-prebuilt.sh debian bookworm       # Debian Bookworm (12)
-./download-prebuilt.sh rocky 9               # Rocky Linux 9
-./download-prebuilt.sh alma 8                # AlmaLinux 8
+./download-prebuilt.sh debian trixie         # Debian Trixie (13)
+./download-prebuilt.sh rocky 10              # Rocky Linux 10
+./download-prebuilt.sh alma 10               # AlmaLinux 10
 ./download-prebuilt.sh arch                  # Arch Linux
 
 # Download all available images from latest release
@@ -83,15 +83,15 @@ Install dependencies:
 
 # Debian (default: bookworm)
 ./builders/debian.sh
-./builders/debian.sh bullseye # specific version
+./builders/debian.sh trixie   # specific version
 
 # Rocky Linux (default: 9)
 ./builders/rocky.sh
-./builders/rocky.sh 8         # specific version
+./builders/rocky.sh 10        # specific version
 
 # AlmaLinux (default: 9)
 ./builders/alma.sh
-./builders/alma.sh 8          # specific version
+./builders/alma.sh 10         # specific version
 
 # Arch Linux
 ./builders/arch.sh
@@ -99,11 +99,11 @@ Install dependencies:
 
 #### Output
 Modified images are saved with `-qa` suffix:
-- `ubuntu-noble-cloudimg-qa.img`
-- `debian-bookworm-cloudimg-qa.qcow2`
-- `rocky-9-cloudimg-qa.qcow2`
+- `noble-server-cloudimg-amd64-qa.img`
+- `bookworm-generic-amd64-qa.qcow2`
+- `rockylinux-9-GenericCloud.latest-qa.qcow2`
 - `AlmaLinux-9-GenericCloud-latest-qa.x86_64.qcow2`
-- `arch-cloudimg-qa.qcow2`
+- `Arch-Linux-x86_64-cloudimg-qa.qcow2`
 
 #### Using Custom Mirrors
 ```bash

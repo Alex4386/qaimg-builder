@@ -43,8 +43,8 @@ OPTIONS:
 EXAMPLES:
     $0 ubuntu noble                    # Download Ubuntu Noble
     $0 debian bookworm                 # Download Debian Bookworm
-    $0 rocky 9                         # Download Rocky Linux 9
-    $0 alma 8                          # Download AlmaLinux 8
+    $0 rocky 10                        # Download Rocky Linux 10
+    $0 alma 10                         # Download AlmaLinux 10
     $0 arch                            # Download Arch Linux
     $0 -a                              # Download all images from latest release
     $0 -r v2025.07.29 ubuntu jammy     # Download from specific release
@@ -53,10 +53,10 @@ EXAMPLES:
     $0 --list-assets                   # List assets in latest release
 
 SUPPORTED DISTRIBUTIONS:
-    ubuntu    - noble, jammy, focal
-    debian    - bookworm, bullseye
-    rocky     - 9, 8
-    alma      - 9, 8
+    ubuntu    - resolute, noble, jammy, focal
+    debian    - trixie, bookworm, bullseye
+    rocky     - 10, 9, 8
+    alma      - 10, 9, 8
     arch      - latest
 
 EOF
@@ -164,13 +164,13 @@ get_asset_name() {
             if [ -z "$version" ]; then
                 version="bookworm"  # default
             fi
-            echo "debian-${version}-generic-amd64-qa.qcow2"
+            echo "${version}-generic-amd64-qa.qcow2"
             ;;
         rocky)
             if [ -z "$version" ]; then
                 version="9"  # default
             fi
-            echo "Rocky-${version}-GenericCloud-Base-latest-qa.x86_64.qcow2"
+            echo "rockylinux-${version}-GenericCloud.latest-qa.qcow2"
             ;;
         alma)
             if [ -z "$version" ]; then

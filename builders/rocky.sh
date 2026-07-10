@@ -55,7 +55,7 @@ if [[ ! -f "$IMAGE_NAME" ]]; then
 elif [[ -f "$IMAGE_NAME.checksum.tmp" ]]; then
     echo "Verifying existing image checksum..."
     # Extract checksum for our specific file from the CHECKSUM file
-    EXPECTED_CHECKSUM=$(grep "^SHA256 (Rocky-$VERSION-GenericCloud.latest.x86_64.qcow2)" "$IMAGE_NAME.checksum.tmp" | sed 's/.*= //')
+    EXPECTED_CHECKSUM=$(grep "^SHA256 (Rocky-$VERSION-GenericCloud$FILE_SUFFIX.latest.x86_64.qcow2)" "$IMAGE_NAME.checksum.tmp" | sed 's/.*= //')
     
     if [[ -n "$EXPECTED_CHECKSUM" ]]; then
         ACTUAL_CHECKSUM=$(sha256sum "$IMAGE_NAME" | awk '{print $1}')
@@ -69,7 +69,7 @@ elif [[ -f "$IMAGE_NAME.checksum.tmp" ]]; then
             echo "Checksum verified - using existing image"
         fi
     else
-        echo "Could not find checksum for Rocky-$VERSION-GenericCloud.latest.x86_64.qcow2 in CHECKSUM file"
+        echo "Could not find checksum for Rocky-$VERSION-GenericCloud$FILE_SUFFIX.latest.x86_64.qcow2 in CHECKSUM file"
         echo "Using existing image (no checksum found to verify)"
     fi
 else
@@ -80,14 +80,14 @@ if [[ "$DOWNLOAD_NEEDED" == "true" ]]; then
     echo "Downloading Rocky Linux $VERSION cloud image..."
     if ! wget -O "$IMAGE_NAME" "$ROCKY_URL"; then
         echo "Failed to download Rocky Linux cloud image from $ROCKY_URL"
-        echo "Available versions: 7, 8, 9"
+        echo "Available versions: 7, 8, 9, 10"
         exit 1
     fi
     
     # Verify downloaded image
     if [[ -f "$IMAGE_NAME.checksum.tmp" ]]; then
         echo "Verifying downloaded image..."
-        EXPECTED_CHECKSUM=$(grep "^SHA256 (Rocky-$VERSION-GenericCloud.latest.x86_64.qcow2)" "$IMAGE_NAME.checksum.tmp" | sed 's/.*= //')
+        EXPECTED_CHECKSUM=$(grep "^SHA256 (Rocky-$VERSION-GenericCloud$FILE_SUFFIX.latest.x86_64.qcow2)" "$IMAGE_NAME.checksum.tmp" | sed 's/.*= //')
         if [[ -n "$EXPECTED_CHECKSUM" ]]; then
             ACTUAL_CHECKSUM=$(sha256sum "$IMAGE_NAME" | awk '{print $1}')
             if [[ "$EXPECTED_CHECKSUM" != "$ACTUAL_CHECKSUM" ]]; then
