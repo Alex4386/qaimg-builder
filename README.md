@@ -14,6 +14,7 @@ This is a collection of scripts to build cloudinit images with `qemu-guest-agent
 |--------------|--------|----------|
 | Ubuntu | [![Build Ubuntu](https://github.com/Alex4386/qaimg-builder/actions/workflows/build-ubuntu.yml/badge.svg)](https://github.com/Alex4386/qaimg-builder/actions/workflows/build-ubuntu.yml) | [Latest Artifacts](https://github.com/Alex4386/qaimg-builder/actions/workflows/build-ubuntu.yml) |
 | Debian | [![Build Debian](https://github.com/Alex4386/qaimg-builder/actions/workflows/build-debian.yml/badge.svg)](https://github.com/Alex4386/qaimg-builder/actions/workflows/build-debian.yml) | [Latest Artifacts](https://github.com/Alex4386/qaimg-builder/actions/workflows/build-debian.yml) |
+| Debian Flavors | [![Build Debian Flavors](https://github.com/Alex4386/qaimg-builder/actions/workflows/build-flavors.yml/badge.svg)](https://github.com/Alex4386/qaimg-builder/actions/workflows/build-flavors.yml) | [Latest Artifacts](https://github.com/Alex4386/qaimg-builder/actions/workflows/build-flavors.yml) |
 | Rocky Linux | [![Build Rocky](https://github.com/Alex4386/qaimg-builder/actions/workflows/build-rocky.yml/badge.svg)](https://github.com/Alex4386/qaimg-builder/actions/workflows/build-rocky.yml) | [Latest Artifacts](https://github.com/Alex4386/qaimg-builder/actions/workflows/build-rocky.yml) |
 | AlmaLinux | [![Build AlmaLinux](https://github.com/Alex4386/qaimg-builder/actions/workflows/build-alma.yml/badge.svg)](https://github.com/Alex4386/qaimg-builder/actions/workflows/build-alma.yml) | [Latest Artifacts](https://github.com/Alex4386/qaimg-builder/actions/workflows/build-alma.yml) |
 | Arch Linux | [![Build Arch](https://github.com/Alex4386/qaimg-builder/actions/workflows/build-arch.yml/badge.svg)](https://github.com/Alex4386/qaimg-builder/actions/workflows/build-arch.yml) | [Latest Artifacts](https://github.com/Alex4386/qaimg-builder/actions/workflows/build-arch.yml) |
@@ -97,10 +98,47 @@ Install dependencies:
 ./builders/arch.sh
 ```
 
+#### Building Application Flavors
+
+Application flavors bake a service stack into a distribution image, similar to
+cloud application blueprints:
+
+```bash
+# List available flavors
+./flavors/build.sh --list
+
+# Build Debian Bookworm with Nginx and qemu-guest-agent
+./flavors/build.sh debian nginx bookworm
+
+# Build Debian Bookworm with Node.js
+./flavors/build.sh debian nodejs bookworm
+
+# Build Debian Bookworm with WireGuard
+./flavors/build.sh debian wireguard bookworm
+
+# Build Debian Bookworm with Docker
+./flavors/build.sh debian docker bookworm
+
+# Build Debian Bookworm with a vanilla Minecraft server
+./flavors/build.sh debian minecraft-vanilla bookworm
+
+# Build Debian Bookworm with a Paper Minecraft server
+./flavors/build.sh debian minecraft-paper bookworm
+```
+
+Flavor builders live at `flavors/<distribution>/<flavor>/build.sh`. See
+[`flavors/README.md`](flavors/README.md) for usage and authoring details.
+
 #### Output
 Modified images are saved with `-qa` suffix:
 - `noble-server-cloudimg-amd64-qa.img`
 - `bookworm-generic-amd64-qa.qcow2`
+- `bookworm-generic-amd64-qa.nginx.qcow2` (Nginx flavor)
+- `bookworm-generic-amd64-qa.nodejs.qcow2` (Node.js flavor)
+- `bookworm-generic-amd64-qa.wireguard.qcow2` (WireGuard flavor)
+- `bookworm-generic-amd64-qa.docker.qcow2` (Docker flavor)
+- `bookworm-generic-amd64-qa.minecraft-vanilla.qcow2` (Minecraft Vanilla flavor)
+- `bookworm-generic-amd64-qa.minecraft-paper.qcow2` (Minecraft Paper flavor)
 - `rockylinux-9-GenericCloud.latest-qa.qcow2`
 - `AlmaLinux-9-GenericCloud-latest-qa.x86_64.qcow2`
 - `Arch-Linux-x86_64-cloudimg-qa.qcow2`

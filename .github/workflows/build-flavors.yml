@@ -1,0 +1,103 @@
+name: Build Debian Flavors
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'flavors/**'
+      - 'tests/test-flavors.sh'
+      - 'builders/debian.sh'
+      - 'common/**'
+      - '.github/workflows/build-flavors.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'flavors/**'
+      - 'tests/test-flavors.sh'
+      - 'builders/debian.sh'
+      - 'common/**'
+      - '.github/workflows/build-flavors.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-flavors:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Test flavor builders
+      run: ./tests/test-flavors.sh
+
+  build-base:
+    needs: test-flavors
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y qemu-utils parted wget
+
+    - name: Build Debian Bookworm base image
+      run: |
+        cd builders
+        ./debian.sh bookworm
+
+    - name: Upload Debian Bookworm base image
+      uses: actions/upload-artifact@v4
+      with:
+        name: debian-bookworm-flavor-base
+        path: builders/bookworm-generic-amd64-qa.qcow2
+        if-no-files-found: error
+        retention-days: 1
+        compression-level: 0
+
+  build-flavor:
+    needs: build-base
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        flavor:
+          - nginx
+          - nodejs
+          - wireguard
+          - docker
+          - minecraft-vanilla
+          - minecraft-paper
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y qemu-utils parted wget
+
+    - name: Download Debian Bookworm base image
+      uses: actions/download-artifact@v4
+      with:
+        name: debian-bookworm-flavor-base
+        path: base-image
+
+    - name: Build Debian Bookworm ${{ matrix.flavor }} image
+      run: |
+        BASE_IMAGE="$GITHUB_WORKSPACE/base-image/bookworm-generic-amd64-qa.qcow2" \
+        OUTPUT_DIR="$GITHUB_WORKSPACE/output" \
+          ./flavors/build.sh debian "${{ matrix.flavor }}" bookworm
+        qemu-img check "output/bookworm-generic-amd64-qa.${{ matrix.flavor }}.qcow2"
+
+    - name: Upload Debian Bookworm ${{ matrix.flavor }} artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: debian-bookworm-${{ matrix.flavor }}-qa-image
+        path: output/bookworm-generic-amd64-qa.${{ matrix.flavor }}.qcow2
+        if-no-files-found: error
+        retention-days: 30
+        compression-level: 0

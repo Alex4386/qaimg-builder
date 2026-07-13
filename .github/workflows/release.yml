@@ -65,6 +65,49 @@ jobs:
         path: builders/${{ matrix.codename }}-generic-amd64-qa.qcow2
         retention-days: 1
 
+  build-debian-flavors:
+    needs: build-debian
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        flavor:
+          - nginx
+          - nodejs
+          - wireguard
+          - docker
+          - minecraft-vanilla
+          - minecraft-paper
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y qemu-utils parted wget
+
+    - name: Download Debian Bookworm base image
+      uses: actions/download-artifact@v4
+      with:
+        name: debian-bookworm-qa-image
+        path: base-image
+
+    - name: Build Debian Bookworm ${{ matrix.flavor }} image
+      run: |
+        BASE_IMAGE="$GITHUB_WORKSPACE/base-image/bookworm-generic-amd64-qa.qcow2" \
+        OUTPUT_DIR="$GITHUB_WORKSPACE/output" \
+          ./flavors/build.sh debian "${{ matrix.flavor }}" bookworm
+        qemu-img check "output/bookworm-generic-amd64-qa.${{ matrix.flavor }}.qcow2"
+
+    - name: Upload Debian Bookworm ${{ matrix.flavor }} artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: debian-bookworm-${{ matrix.flavor }}-qa-image
+        path: output/bookworm-generic-amd64-qa.${{ matrix.flavor }}.qcow2
+        if-no-files-found: error
+        retention-days: 1
+        compression-level: 0
+
   build-rocky:
     runs-on: ubuntu-latest
     strategy:
@@ -141,7 +184,7 @@ jobs:
         retention-days: 1
 
   create-release:
-    needs: [build-ubuntu, build-debian, build-rocky, build-alma, build-arch]
+    needs: [build-ubuntu, build-debian, build-debian-flavors, build-rocky, build-alma, build-arch]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -178,9 +221,9 @@ jobs:
       id: set_tag
       run: |
         if [[ "${{ github.event_name }}" == "push" ]]; then
-          echo "tag_name=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          echo "tag_name=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
         elif [[ -n "${{ github.event.inputs.tag_name }}" ]]; then
-          echo "tag_name=${{ github.event.inputs.tag_name }}" >> $GITHUB_OUTPUT
+          echo "tag_name=${{ github.event.inputs.tag_name }}" >> "$GITHUB_OUTPUT"
         else
           # Generate base tag with current date
           base_tag="v$(date +%Y.%m.%d)"
@@ -192,9 +235,9 @@ jobs:
             while gh release view "${base_tag}-${counter}" >/dev/null 2>&1; do
               ((counter++))
             done
-            echo "tag_name=${base_tag}-${counter}" >> $GITHUB_OUTPUT
+            echo "tag_name=${base_tag}-${counter}" >> "$GITHUB_OUTPUT"
           else
-            echo "tag_name=${base_tag}" >> $GITHUB_OUTPUT
+            echo "tag_name=${base_tag}" >> "$GITHUB_OUTPUT"
           fi
         fi
       env:
@@ -216,6 +259,7 @@ jobs:
           ### Supported Distributions
           - Ubuntu: Resolute (26.04), Noble (24.04), Jammy (22.04), Focal (20.04)
           - Debian: Trixie (13), Bookworm (12), Bullseye (11)
+          - Debian Bookworm flavors: Nginx, Node.js, WireGuard, Docker, Minecraft Vanilla, Minecraft Paper
           - Rocky Linux: 10, 9
           - AlmaLinux: 10, 9
           - Arch Linux: Latest
