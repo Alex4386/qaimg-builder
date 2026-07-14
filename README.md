@@ -119,6 +119,15 @@ cloud application blueprints:
 # Build Debian Bookworm with Docker
 ./flavors/build.sh debian docker bookworm
 
+# Build Debian Bookworm with Grafana OSS
+./flavors/build.sh debian grafana bookworm
+
+# Build Debian Bookworm with MariaDB
+./flavors/build.sh debian mariadb bookworm
+
+# Build Debian Bookworm with PostgreSQL
+./flavors/build.sh debian postgresql bookworm
+
 # Build Debian Bookworm with a vanilla Minecraft server
 ./flavors/build.sh debian minecraft-vanilla bookworm
 
@@ -137,6 +146,9 @@ Modified images are saved with `-qa` suffix:
 - `bookworm-generic-amd64-qa.nodejs.qcow2` (Node.js flavor)
 - `bookworm-generic-amd64-qa.wireguard.qcow2` (WireGuard flavor)
 - `bookworm-generic-amd64-qa.docker.qcow2` (Docker flavor)
+- `bookworm-generic-amd64-qa.grafana.qcow2` (Grafana OSS flavor)
+- `bookworm-generic-amd64-qa.mariadb.qcow2` (MariaDB flavor)
+- `bookworm-generic-amd64-qa.postgresql.qcow2` (PostgreSQL flavor)
 - `bookworm-generic-amd64-qa.minecraft-vanilla.qcow2` (Minecraft Vanilla flavor)
 - `bookworm-generic-amd64-qa.minecraft-paper.qcow2` (Minecraft Paper flavor)
 - `rockylinux-9-GenericCloud.latest-qa.qcow2`

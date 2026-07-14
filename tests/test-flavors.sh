@@ -29,7 +29,7 @@ if ! grep -qx 'debian/nginx' <<< "$AVAILABLE_FLAVORS"; then
     exit 1
 fi
 
-for flavor in nodejs wireguard docker; do
+for flavor in nodejs wireguard docker grafana mariadb postgresql; do
     if ! grep -qx "debian/$flavor" <<< "$AVAILABLE_FLAVORS"; then
         printf 'Dispatcher did not list debian/%s\n' "$flavor" >&2
         exit 1
@@ -123,6 +123,8 @@ while read -r flavor package; do
     cmp "$expected_script" "$capture_file"
 done <<'EOF'
 wireguard wireguard
+mariadb mariadb-server
+postgresql postgresql
 EOF
 
 BASE_IMAGE="$TMP_ROOT/base.qcow2" \
@@ -177,6 +179,28 @@ grep -q '^    docker-buildx-plugin docker-compose-plugin$' "$TMP_ROOT/docker-scr
 if grep -Eq 'docker\.io|get\.docker\.com|daemon\.json|groupadd|usermod|docker run|systemctl' \
     "$TMP_ROOT/docker-script"; then
     printf 'Docker flavor contains unexpected customization\n' >&2
+    exit 1
+fi
+
+BASE_IMAGE="$TMP_ROOT/base.qcow2" \
+OUTPUT_DIR="$TMP_ROOT/output" \
+QIMI_PATH="$TMP_ROOT/qimi" \
+QIMI_USE_SUDO=0 \
+QIMI_CAPTURE_FILE="$TMP_ROOT/grafana-script" \
+"$PROJECT_ROOT/flavors/debian/grafana/build.sh" bookworm
+
+GRAFANA_IMAGE="$TMP_ROOT/output/bookworm-generic-amd64-qa.grafana.qcow2"
+cmp "$TMP_ROOT/base.qcow2" "$GRAFANA_IMAGE"
+bash -n "$TMP_ROOT/grafana-script"
+grep -q '^apt-get install -y apt-transport-https software-properties-common wget$' \
+    "$TMP_ROOT/grafana-script"
+grep -Fq 'https://apt.grafana.com/gpg.key' "$TMP_ROOT/grafana-script"
+grep -Fq 'deb [signed-by=/usr/share/keyrings/grafana.key] https://apt.grafana.com stable main' \
+    "$TMP_ROOT/grafana-script"
+grep -q '^apt-get install -y grafana$' "$TMP_ROOT/grafana-script"
+if grep -Eq 'grafana-enterprise| beta main|grafana\.ini|plugins|grafana-cli|systemctl' \
+    "$TMP_ROOT/grafana-script"; then
+    printf 'Grafana flavor contains unexpected customization\n' >&2
     exit 1
 fi
 

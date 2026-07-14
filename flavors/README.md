@@ -17,6 +17,9 @@ Use the dispatcher or invoke a flavor directly:
 ./flavors/build.sh debian nodejs bookworm
 ./flavors/build.sh debian wireguard bookworm
 ./flavors/build.sh debian docker bookworm
+./flavors/build.sh debian grafana bookworm
+./flavors/build.sh debian mariadb bookworm
+./flavors/build.sh debian postgresql bookworm
 ./flavors/build.sh debian minecraft-vanilla bookworm
 ./flavors/build.sh debian minecraft-paper bookworm
 ./flavors/debian/nginx/build.sh bookworm

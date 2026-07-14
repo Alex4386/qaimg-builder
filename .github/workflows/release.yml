@@ -76,6 +76,9 @@ jobs:
           - nodejs
           - wireguard
           - docker
+          - grafana
+          - mariadb
+          - postgresql
           - minecraft-vanilla
           - minecraft-paper
     steps:
@@ -259,7 +262,7 @@ jobs:
           ### Supported Distributions
           - Ubuntu: Resolute (26.04), Noble (24.04), Jammy (22.04), Focal (20.04)
           - Debian: Trixie (13), Bookworm (12), Bullseye (11)
-          - Debian Bookworm flavors: Nginx, Node.js, WireGuard, Docker, Minecraft Vanilla, Minecraft Paper
+          - Debian Bookworm flavors: Nginx, Node.js, WireGuard, Docker, Grafana OSS, MariaDB, PostgreSQL, Minecraft Vanilla, Minecraft Paper
           - Rocky Linux: 10, 9
           - AlmaLinux: 10, 9
           - Arch Linux: Latest
