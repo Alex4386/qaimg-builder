@@ -302,7 +302,7 @@ flavor_grow_root_filesystem() {
     # (already-resized) virtual disk. Host-side, via qemu-nbd. Requires root.
     local image="$1" sudo nbd i part_name part_num fsdev
     sudo="$(flavor_sudo_prefix)"
-    for c in qemu-nbd partprobe growpart resize2fs lsblk; do
+    for c in qemu-nbd partprobe growpart resize2fs e2fsck lsblk; do
         flavor_require_command "$c"
     done
 
@@ -330,7 +330,24 @@ flavor_grow_root_filesystem() {
     $sudo growpart "$nbd" "$part_num" || flavor_log "growpart: nothing to grow"
     $sudo partprobe "$nbd" 2>/dev/null || true
     sleep 1
-    $sudo resize2fs "$fsdev" || flavor_die "resize2fs failed on $fsdev"
+
+    # resize2fs refuses to grow an unchecked filesystem ("Please run e2fsck -f
+    # first"), so force a non-interactive check. e2fsck exits 1 when it fixes
+    # something (expected on an offline image) and >=2 on real errors, so only
+    # treat >=2 as fatal.
+    local fstype
+    fstype="$(lsblk -brno FSTYPE "$fsdev" 2>/dev/null | head -n1)"
+    case "$fstype" in
+        ext2|ext3|ext4|"")
+            $sudo e2fsck -f -p "$fsdev"
+            local rc=$?
+            [[ "$rc" -ge 2 ]] && flavor_die "e2fsck failed on $fsdev (rc=$rc)"
+            $sudo resize2fs "$fsdev" || flavor_die "resize2fs failed on $fsdev"
+            ;;
+        *)
+            flavor_die "Unsupported root filesystem for resize: $fstype"
+            ;;
+    esac
 }
 
 flavor_maybe_resize_image() {
