@@ -13,6 +13,7 @@ flavors/<distribution>/<flavor>/build.sh
 Use the dispatcher or invoke a flavor directly:
 
 ```bash
+./flavors/build.sh debian generic bookworm
 ./flavors/build.sh debian nginx bookworm
 ./flavors/build.sh debian nodejs bookworm
 ./flavors/build.sh debian wireguard bookworm
@@ -98,3 +99,67 @@ Prefer `/etc/skel` for purely static home files: cloud-init's `useradd -m`
 copies it at account-creation time with no service needed. Use this mechanism
 when you need the resolved username, files outside home, group ownership, or
 re-runnable logic.
+
+## Disk sizing (build-time image growth)
+
+The upstream cloud images ship a small virtual disk (~3 GB), which is too small
+to *build* heavy flavors like GitLab. A flavor can declare a minimum image size,
+and `build_debian_flavor` grows the working image to at least that **before**
+provisioning — resizing the virtual disk (`qemu-img resize`), then the root
+partition (`growpart`) and filesystem (`resize2fs`) on the build host via
+`qemu-nbd`.
+
+Declare it in the flavor's `build.sh`, before the `build_debian_flavor` call:
+
+```bash
+export FLAVOR_MIN_DISK_GB="${FLAVOR_MIN_DISK_GB:-16}"   # operator can override
+```
+
+Notes:
+
+- The default expression lets an operator override the size at build time:
+  `FLAVOR_MIN_DISK_GB=40 ./flavors/build.sh debian gitlab bookworm`.
+- If the image is already at least that large, the resize is a no-op.
+- `FLAVOR_RESIZE=0` disables the resize (used by the test suite, which builds
+  against a stub image).
+- Growing needs `growpart` (cloud-guest-utils) and `resize2fs` (e2fsprogs) on
+  the build host, and root/sudo for `qemu-nbd` — `common/setup-deps.sh` installs
+  the build-host packages.
+- This is separate from **runtime** growth: the upstream images keep cloud-init's
+  `growpart`/`resizefs`, so a deployed instance still expands its root filesystem
+  to fill whatever (larger) disk the hypervisor provides.
+
+## Preconfigured credentials
+
+Flavors that manage secrets (database passwords, app tokens, admin passwords)
+resolve them at first boot instead of baking fixed values into the image, so no
+two instances share the same well-known credentials. Emit the credentials
+library into your provisioning script, then read values inside an
+`initial-provision` drop-in:
+
+```bash
+flavor_credentials_base_snippet     # installs /usr/local/lib/qaimg-credentials.sh
+flavor_initial_provision_base_snippet
+```
+
+Inside a drop-in:
+
+```bash
+. /usr/local/lib/qaimg-credentials.sh
+pw="$(qaimg_cred_or_random POSTGRES_PASSWORD)"   # provided value, else random+persisted
+url="$(qaimg_cred GITLAB_EXTERNAL_URL || true)"  # provided value, else empty
+```
+
+Resolution precedence for each key:
+
+1. **Deploy-time** — `/etc/qaimg/credentials`, delivered by the operator via
+   cloud-init (see [`examples/vendor.yaml`](../examples/vendor.yaml)).
+2. **Build-time** — `/usr/local/share/qaimg/credentials.default`, an optional
+   fallback baked into the image.
+3. **Random** — `qaimg_cred_or_random` generates a value and persists it to
+   `/etc/qaimg/credentials.generated` (mode `0600`) so it is stable across
+   reboots and retrievable by the operator.
+
+All three files are flat `KEY=VALUE` (values may be quoted). Deliver deploy-time
+credentials as cloud-init vendor-data or user-data with a `write_files` entry
+for `/etc/qaimg/credentials` (owner `root:root`, mode `0600`).

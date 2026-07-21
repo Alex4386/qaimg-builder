@@ -31,6 +31,8 @@ Optional environment variables:
   OUTPUT_IMAGE=/path/name       Explicit completed-image path
   OVERWRITE=1                   Replace an existing output image
   KEEP_WORKDIR=1                Preserve temporary build files
+  FLAVOR_MIN_DISK_GB=N          Grow the image to at least N GiB before build
+  FLAVOR_RESIZE=0               Disable build-time image resizing
 EOF
         return 0
     fi
@@ -75,6 +77,7 @@ EOF
 
     working_image="$FLAVOR_WORK_DIR/${codename}-generic-amd64-qa.${flavor}.qcow2"
     flavor_prepare_output "$base_image" "$working_image" "$output_image"
+    flavor_maybe_resize_image "$working_image"
     flavor_ensure_qimi "$project_root"
     flavor_exec_in_image "$working_image" "${NAMESERVER:-1.1.1.1}" "$customize_script"
     flavor_publish_image "$working_image" "$output_image"

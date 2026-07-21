@@ -39,12 +39,22 @@ sudo systemctl stop elasticsearch
 - `/var/lib/elasticsearch` data
 - `/var/log/elasticsearch` logs
 
-On first start, Elasticsearch 8.x auto-generates security credentials. Reset the
-`elastic` superuser password with:
+On first start, Elasticsearch 8.x auto-generates security credentials.
+
+## Credentials
+
+If `ELASTIC_PASSWORD` is provided in `/etc/qaimg/credentials` (via cloud-init,
+see [`examples/vendor.yaml`](../../../examples/vendor.yaml)), the
+`40-elasticsearch-credentials.sh` drop-in sets the built-in `elastic` superuser
+password to it on first boot (best effort — it waits for the node to come up).
+If it is not provided, the package's auto-generated password stays in place;
+retrieve or reset it with:
 
 ```bash
 sudo /usr/share/elasticsearch/bin/elasticsearch-reset-password -u elastic
 ```
+
+See [`flavors/README.md`](../../README.md) for the full credentials mechanism.
 
 ## Login user access
 

@@ -28,19 +28,30 @@ them individually.
 The omnibus package is installed **without** `EXTERNAL_URL`, so the expensive
 `gitlab-ctl reconfigure` does not run during the image build. Instead, a generic
 oneshot `initial-provision.service` runs at first boot (ordered
-`After=cloud-final.service`) and executes a drop-in in
-`/usr/local/lib/initial-provision.d` that runs `gitlab-ctl reconfigure` once.
+`After=cloud-final.service`) and executes the `30-gitlab-reconfigure.sh` drop-in
+that applies preconfigured credentials and then runs `gitlab-ctl reconfigure`
+once.
 
-Set your real external URL and re-run reconfigure after the instance is up:
+Credentials come from `/etc/qaimg/credentials` (delivered via cloud-init, see
+[`examples/vendor.yaml`](../../../examples/vendor.yaml)):
+
+| Key | Purpose |
+|-----|---------|
+| `GITLAB_EXTERNAL_URL` | written to `gitlab.rb` before reconfigure (kept as-is if unset) |
+| `GITLAB_ROOT_PASSWORD` | initial `root` password, honored only on the first reconfigure |
+
+If `GITLAB_ROOT_PASSWORD` is not provided, the initial root password is
+generated at reconfigure time and written to `/etc/gitlab/initial_root_password`
+(valid for 24 hours). See [`flavors/README.md`](../../README.md) for the full
+credentials mechanism.
+
+To change the external URL later:
 
 ```bash
 sudo sed -i "s|^external_url .*|external_url 'https://gitlab.example.com'|" \
     /etc/gitlab/gitlab.rb
 sudo gitlab-ctl reconfigure
 ```
-
-The initial root password is generated at reconfigure time and written to
-`/etc/gitlab/initial_root_password` (valid for 24 hours).
 
 ## Service management
 
@@ -61,7 +72,10 @@ sudo systemctl status gitlab-runsvdir
 ## Caveats
 
 - GitLab omnibus is resource hungry: at least 4 GB RAM (8 GB recommended) and
-  several GB of disk are required for a usable instance.
+  several GB of disk are required for a usable instance. The build grows the
+  image to `FLAVOR_MIN_DISK_GB` (default 8 GiB) so the package installs and
+  reconfigures with headroom; override it if needed, e.g.
+  `FLAVOR_MIN_DISK_GB=40 ./flavors/build.sh debian gitlab bookworm`.
 - The first `gitlab-ctl reconfigure` at boot can take several minutes; GitLab is
   not reachable until it finishes.
 - The omnibus package is published for `amd64` and `arm64` only.

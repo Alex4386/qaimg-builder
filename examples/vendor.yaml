@@ -1,0 +1,56 @@
+#cloud-config
+# Example cloud-init vendor-data (or user-data) that delivers preconfigured
+# credentials to a qaimg flavor at DEPLOY time.
+#
+# How it works:
+#   - qaimg flavors that handle secrets read /etc/qaimg/credentials on first
+#     boot (via /usr/local/lib/qaimg-credentials.sh). Any key you set here wins
+#     over the image's baked default; anything you omit is generated randomly
+#     and persisted to /etc/qaimg/credentials.generated.
+#   - The file is flat KEY=VALUE. Keep it 0600 and owned by root.
+#
+# Usage with most clouds / Proxmox / OpenStack:
+#   Pass this file as the instance's vendor-data (preferred) or user-data.
+#   e.g. cloud-localds seed.img user-data.yaml vendor.yaml
+#
+# SECURITY: values below are placeholders. Replace them, and prefer delivering
+# this through your platform's secret mechanism rather than committing real
+# secrets to source control.
+
+write_files:
+  - path: /etc/qaimg/credentials
+    owner: root:root
+    permissions: '0600'
+    content: |
+      # ---- PostgreSQL flavor ----
+      POSTGRES_PASSWORD=change-me-postgres
+      # Optional: also create an application database + role on first boot.
+      POSTGRES_APP_DB=appdb
+      POSTGRES_APP_USER=appuser
+      POSTGRES_APP_PASSWORD=change-me-app
+
+      # ---- MariaDB flavor ----
+      MARIADB_ROOT_PASSWORD=change-me-root
+      MARIADB_APP_DB=appdb
+      MARIADB_APP_USER=appuser
+      MARIADB_APP_PASSWORD=change-me-app
+
+      # ---- Supabase flavor ----
+      POSTGRES_PASSWORD=change-me-postgres
+      DASHBOARD_USERNAME=supabase
+      DASHBOARD_PASSWORD=change-me-dashboard
+      JWT_SECRET=change-me-at-least-32-chars-long-secret
+
+      # ---- Strapi flavor ----
+      STRAPI_APP_KEYS=key1,key2
+      STRAPI_API_TOKEN_SALT=change-me
+      STRAPI_ADMIN_JWT_SECRET=change-me
+      STRAPI_TRANSFER_TOKEN_SALT=change-me
+      STRAPI_JWT_SECRET=change-me
+
+      # ---- GitLab flavor ----
+      GITLAB_EXTERNAL_URL=http://gitlab.example.com
+      GITLAB_ROOT_PASSWORD=change-me-at-least-8-chars
+
+      # ---- Elasticsearch flavor ----
+      ELASTIC_PASSWORD=change-me-elastic

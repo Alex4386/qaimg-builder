@@ -51,6 +51,27 @@ sudo systemctl restart strapi
 Create the first admin user by visiting `http://<host>:1337/admin` after the
 first boot.
 
+## Credentials
+
+`create-strapi-app` bakes Strapi's secrets (`APP_KEYS`, `*_SALT`, `*_SECRET`)
+into `.env` at build time, so every image built from the same run would
+otherwise share identical secrets. The `40-strapi-secrets.sh` drop-in fixes this
+at first boot: it applies preconfigured values or generates per-instance random
+ones, then restarts Strapi. Values come from `/etc/qaimg/credentials` (see
+[`examples/vendor.yaml`](../../../examples/vendor.yaml)):
+
+| Key | `.env` value |
+|-----|--------------|
+| `STRAPI_APP_KEYS` | `APP_KEYS` |
+| `STRAPI_API_TOKEN_SALT` | `API_TOKEN_SALT` |
+| `STRAPI_ADMIN_JWT_SECRET` | `ADMIN_JWT_SECRET` |
+| `STRAPI_TRANSFER_TOKEN_SALT` | `TRANSFER_TOKEN_SALT` |
+| `STRAPI_JWT_SECRET` | `JWT_SECRET` |
+
+Anything omitted is generated randomly and persisted to
+`/etc/qaimg/credentials.generated`. See [`flavors/README.md`](../../README.md)
+for the full credentials mechanism.
+
 ## Login user access
 
 The default login user does not exist when the image is built. A generic oneshot

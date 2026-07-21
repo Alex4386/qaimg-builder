@@ -56,7 +56,7 @@ if grep -q 'common-minecraft' <<< "$AVAILABLE_FLAVORS"; then
     exit 1
 fi
 
-for flavor in openclaw coolify supabase gitlab strapi prometheus elasticsearch; do
+for flavor in generic openclaw coolify supabase gitlab strapi prometheus elasticsearch; do
     if ! grep -qx "debian/$flavor" <<< "$AVAILABLE_FLAVORS"; then
         printf 'Dispatcher did not list debian/%s\n' "$flavor" >&2
         exit 1
@@ -101,6 +101,17 @@ assert_initial_provision_group() {
     grep -Fq "/usr/local/lib/initial-provision.d/\${DROPIN_PRIORITY}-group-\${DROPIN_GROUP}.sh" \
         "$script"
     grep -Fq 'usermod -aG "\$group" "\$login_user"' "$script"
+}
+
+assert_credentials_base() {
+    # Verifies the preconfigured-credentials library is baked in.
+    local script="$1"
+
+    grep -Fq '/usr/local/lib/qaimg-credentials.sh' "$script"
+    grep -Fq 'QAIMG_CRED_DEPLOY=/etc/qaimg/credentials' "$script"
+    grep -Fq 'QAIMG_CRED_DEFAULT=/usr/local/share/qaimg/credentials.default' "$script"
+    grep -Fq 'QAIMG_CRED_GENERATED=/etc/qaimg/credentials.generated' "$script"
+    grep -Fq 'qaimg_cred_or_random()' "$script"
 }
 
 assert_minecraft_common() {
@@ -162,9 +173,70 @@ while read -r flavor package; do
     cmp "$expected_script" "$capture_file"
 done <<'EOF'
 wireguard wireguard
-mariadb mariadb-server
-postgresql postgresql
 EOF
+
+# PostgreSQL and MariaDB now install extra tooling and a first-boot credential
+# drop-in, so they are checked individually rather than by exact-script cmp.
+BASE_IMAGE="$TMP_ROOT/base.qcow2" \
+OUTPUT_DIR="$TMP_ROOT/output" \
+QIMI_PATH="$TMP_ROOT/qimi" \
+QIMI_USE_SUDO=0 \
+QIMI_CAPTURE_FILE="$TMP_ROOT/postgresql-script" \
+"$PROJECT_ROOT/flavors/debian/postgresql/build.sh" bookworm
+
+cmp "$TMP_ROOT/base.qcow2" \
+    "$TMP_ROOT/output/bookworm-generic-amd64-qa.postgresql.qcow2"
+bash -n "$TMP_ROOT/postgresql-script"
+grep -q '^apt-get install -y postgresql openssl$' "$TMP_ROOT/postgresql-script"
+assert_credentials_base "$TMP_ROOT/postgresql-script"
+assert_initial_provision_base "$TMP_ROOT/postgresql-script"
+grep -Fq '/usr/local/lib/initial-provision.d/40-postgresql-credentials.sh' \
+    "$TMP_ROOT/postgresql-script"
+grep -Fq 'qaimg_cred_or_random POSTGRES_PASSWORD' "$TMP_ROOT/postgresql-script"
+grep -Fq "ALTER USER postgres WITH PASSWORD" "$TMP_ROOT/postgresql-script"
+
+BASE_IMAGE="$TMP_ROOT/base.qcow2" \
+OUTPUT_DIR="$TMP_ROOT/output" \
+QIMI_PATH="$TMP_ROOT/qimi" \
+QIMI_USE_SUDO=0 \
+QIMI_CAPTURE_FILE="$TMP_ROOT/mariadb-script" \
+"$PROJECT_ROOT/flavors/debian/mariadb/build.sh" bookworm
+
+cmp "$TMP_ROOT/base.qcow2" \
+    "$TMP_ROOT/output/bookworm-generic-amd64-qa.mariadb.qcow2"
+bash -n "$TMP_ROOT/mariadb-script"
+grep -q '^apt-get install -y mariadb-server openssl$' "$TMP_ROOT/mariadb-script"
+assert_credentials_base "$TMP_ROOT/mariadb-script"
+assert_initial_provision_base "$TMP_ROOT/mariadb-script"
+grep -Fq '/usr/local/lib/initial-provision.d/40-mariadb-credentials.sh' \
+    "$TMP_ROOT/mariadb-script"
+grep -Fq 'qaimg_cred_or_random MARIADB_ROOT_PASSWORD' "$TMP_ROOT/mariadb-script"
+
+# Generic: the reusable first-run machinery only (no app, no service, no group).
+BASE_IMAGE="$TMP_ROOT/base.qcow2" \
+OUTPUT_DIR="$TMP_ROOT/output" \
+QIMI_PATH="$TMP_ROOT/qimi" \
+QIMI_USE_SUDO=0 \
+QIMI_CAPTURE_FILE="$TMP_ROOT/generic-script" \
+"$PROJECT_ROOT/flavors/debian/generic/build.sh" bookworm
+
+cmp "$TMP_ROOT/base.qcow2" \
+    "$TMP_ROOT/output/bookworm-generic-amd64-qa.generic.qcow2"
+bash -n "$TMP_ROOT/generic-script"
+grep -q '^apt-get install -y openssl$' "$TMP_ROOT/generic-script"
+assert_credentials_base "$TMP_ROOT/generic-script"
+assert_initial_provision_base "$TMP_ROOT/generic-script"
+# It enables only initial-provision.service; no app service, user, or app drop-in.
+if grep -E '^systemctl enable ' "$TMP_ROOT/generic-script" \
+    | grep -qv 'initial-provision.service'; then
+    printf 'Generic flavor must not enable an app service\n' >&2
+    exit 1
+fi
+if grep -Eq 'useradd|DROPIN_GROUP=|/usr/local/lib/initial-provision.d/[0-9]+-' \
+    "$TMP_ROOT/generic-script"; then
+    printf 'Generic flavor must not install an app user or drop-in\n' >&2
+    exit 1
+fi
 
 BASE_IMAGE="$TMP_ROOT/base.qcow2" \
 OUTPUT_DIR="$TMP_ROOT/output" \
@@ -310,12 +382,17 @@ assert_initial_provision_group "$TMP_ROOT/palworld-script" palworld
 
 build_flavor() {
     local flavor="$1"
+    # FLAVOR_RESIZE=0 keeps the stub qcow2 (a text file) intact: flavors that set
+    # FLAVOR_MIN_DISK_GB log a skip instead of running qemu-img. Build logs are
+    # captured to <flavor>-log for resize assertions.
     BASE_IMAGE="$TMP_ROOT/base.qcow2" \
     OUTPUT_DIR="$TMP_ROOT/output" \
     QIMI_PATH="$TMP_ROOT/qimi" \
     QIMI_USE_SUDO=0 \
+    FLAVOR_RESIZE=0 \
     QIMI_CAPTURE_FILE="$TMP_ROOT/$flavor-script" \
-    "$PROJECT_ROOT/flavors/debian/$flavor/build.sh" bookworm
+    "$PROJECT_ROOT/flavors/debian/$flavor/build.sh" bookworm \
+        > "$TMP_ROOT/$flavor-log" 2>&1
     cmp "$TMP_ROOT/base.qcow2" \
         "$TMP_ROOT/output/bookworm-generic-amd64-qa.$flavor.qcow2"
     bash -n "$TMP_ROOT/$flavor-script"
@@ -347,6 +424,10 @@ grep -qx 'systemctl enable elasticsearch.service' \
     "$TMP_ROOT/elasticsearch-script"
 assert_initial_provision_base "$TMP_ROOT/elasticsearch-script"
 assert_initial_provision_group "$TMP_ROOT/elasticsearch-script" elasticsearch
+assert_credentials_base "$TMP_ROOT/elasticsearch-script"
+grep -Fq '/usr/local/lib/initial-provision.d/40-elasticsearch-credentials.sh' \
+    "$TMP_ROOT/elasticsearch-script"
+grep -Fq 'qaimg_cred ELASTIC_PASSWORD' "$TMP_ROOT/elasticsearch-script"
 if grep -Eq 'packages/9.x|elasticsearch-[0-9]|dpkg -i|apt-key' \
     "$TMP_ROOT/elasticsearch-script"; then
     printf 'Elasticsearch flavor contains unexpected customization\n' >&2
@@ -365,6 +446,13 @@ grep -Fq 'gitlab-ctl reconfigure' "$TMP_ROOT/gitlab-script"
 grep -Fq '/usr/local/lib/initial-provision.d/30-gitlab-reconfigure.sh' \
     "$TMP_ROOT/gitlab-script"
 assert_initial_provision_base "$TMP_ROOT/gitlab-script"
+assert_credentials_base "$TMP_ROOT/gitlab-script"
+grep -Fq 'qaimg_cred GITLAB_EXTERNAL_URL' "$TMP_ROOT/gitlab-script"
+grep -Fq 'qaimg_cred GITLAB_ROOT_PASSWORD' "$TMP_ROOT/gitlab-script"
+# GitLab declares a build-time minimum disk size; with FLAVOR_RESIZE=0 the runner
+# logs a skip that names the requested size.
+grep -Fq 'Resize to 8G requested but FLAVOR_RESIZE!=1' "$TMP_ROOT/gitlab-log"
+# The build-time install must still NOT bake a fixed external_url in.
 if grep -Eq 'EXTERNAL_URL=|script.deb.sh' "$TMP_ROOT/gitlab-script"; then
     printf 'GitLab flavor contains unexpected customization\n' >&2
     exit 1
@@ -383,6 +471,11 @@ grep -q '^User=strapi$' "$TMP_ROOT/strapi-script"
 grep -q '^systemctl enable strapi.service$' "$TMP_ROOT/strapi-script"
 assert_initial_provision_base "$TMP_ROOT/strapi-script"
 assert_initial_provision_group "$TMP_ROOT/strapi-script" strapi
+assert_credentials_base "$TMP_ROOT/strapi-script"
+grep -Fq '/usr/local/lib/initial-provision.d/40-strapi-secrets.sh' \
+    "$TMP_ROOT/strapi-script"
+grep -Fq 'qaimg_cred_or_random STRAPI_ADMIN_JWT_SECRET' "$TMP_ROOT/strapi-script"
+grep -Fq 'set_kv ADMIN_JWT_SECRET' "$TMP_ROOT/strapi-script"
 if grep -Eq 'pm2|nginx|ufw' "$TMP_ROOT/strapi-script"; then
     printf 'Strapi flavor contains unexpected customization\n' >&2
     exit 1
@@ -417,6 +510,9 @@ grep -Fq '/usr/local/lib/initial-provision.d/40-supabase-secrets.sh' \
     "$TMP_ROOT/supabase-script"
 assert_initial_provision_base "$TMP_ROOT/supabase-script"
 assert_initial_provision_group "$TMP_ROOT/supabase-script" docker
+assert_credentials_base "$TMP_ROOT/supabase-script"
+grep -Fq 'qaimg_cred_or_random POSTGRES_PASSWORD' "$TMP_ROOT/supabase-script"
+grep -Fq 'qaimg_cred_or_random JWT_SECRET' "$TMP_ROOT/supabase-script"
 if grep -Eq 'supabase.link/setup.sh|get.docker.com' "$TMP_ROOT/supabase-script"; then
     printf 'Supabase flavor contains unexpected customization\n' >&2
     exit 1

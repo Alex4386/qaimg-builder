@@ -12,7 +12,7 @@ STRAPI_DIR=/opt/strapi
 STRAPI_APP="$STRAPI_DIR/app"
 
 apt-get update
-apt-get install -y apt-transport-https ca-certificates curl gnupg git build-essential
+apt-get install -y apt-transport-https ca-certificates curl gnupg git build-essential openssl
 
 # Node.js LTS from NodeSource (Strapi supports Active/Maintenance LTS only).
 install -m 0755 -d /usr/share/keyrings
@@ -74,8 +74,52 @@ UNIT
 systemctl enable strapi.service
 FLAVOR_SCRIPT
 
+    flavor_credentials_base_snippet
     flavor_initial_provision_base_snippet
     flavor_initial_provision_group_dropin strapi
+
+    cat <<'EOF'
+cat > /usr/local/lib/initial-provision.d/40-strapi-secrets.sh <<'DROPIN'
+#!/bin/bash
+set -e
+# create-strapi-app bakes APP_KEYS/*_SALT/*_SECRET into .env at BUILD time, so
+# every image would otherwise share identical secrets. On first boot, apply
+# preconfigured values from /etc/qaimg/credentials, else generate per-instance
+# random ones, then restart Strapi so it picks them up.
+. /usr/local/lib/qaimg-credentials.sh
+ENV_FILE=/opt/strapi/app/.env
+[ -f "$ENV_FILE" ] || exit 0
+[ -f /opt/strapi/.secrets-done ] && exit 0
+
+app_keys="$(qaimg_cred STRAPI_APP_KEYS || echo "$(openssl rand -hex 16),$(openssl rand -hex 16)")"
+api_salt="$(qaimg_cred_or_random STRAPI_API_TOKEN_SALT 16)"
+admin_jwt="$(qaimg_cred_or_random STRAPI_ADMIN_JWT_SECRET 16)"
+xfer_salt="$(qaimg_cred_or_random STRAPI_TRANSFER_TOKEN_SALT 16)"
+jwt_secret="$(qaimg_cred_or_random STRAPI_JWT_SECRET 16)"
+
+set_kv() {
+    local key="$1" val="$2"
+    if grep -qE "^${key}=" "$ENV_FILE"; then
+        sed -i -E "s|^${key}=.*|${key}=${val}|" "$ENV_FILE"
+    else
+        printf '%s=%s\n' "$key" "$val" >> "$ENV_FILE"
+    fi
 }
+set_kv APP_KEYS "$app_keys"
+set_kv API_TOKEN_SALT "$api_salt"
+set_kv ADMIN_JWT_SECRET "$admin_jwt"
+set_kv TRANSFER_TOKEN_SALT "$xfer_salt"
+set_kv JWT_SECRET "$jwt_secret"
+chown strapi:strapi "$ENV_FILE"
+: > /opt/strapi/.secrets-done
+chown strapi:strapi /opt/strapi/.secrets-done
+systemctl try-restart strapi.service || true
+DROPIN
+chmod 0755 /usr/local/lib/initial-provision.d/40-strapi-secrets.sh
+EOF
+}
+
+# Node.js + node_modules + admin build need more than the base ~3G image.
+export FLAVOR_MIN_DISK_GB="${FLAVOR_MIN_DISK_GB:-8}"
 
 strapi_provisioning_script | build_debian_flavor "$@"

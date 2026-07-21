@@ -93,4 +93,36 @@ else
     echo "qemu-nbd is already installed"
 fi
 
+# Check if growpart is installed (needed to grow flavor images at build time)
+if ! command -v growpart >/dev/null 2>&1; then
+    echo "growpart not found, installing..."
+    OS=$(detect_os)
+    case "$OS" in
+        "debian")
+            install_packages "$OS" "cloud-guest-utils"
+            ;;
+        "fedora"|"rhel")
+            install_packages "$OS" "cloud-utils-growpart"
+            ;;
+        "arch")
+            install_packages "$OS" "cloud-guest-utils"
+            ;;
+        *)
+            echo "Error: Cannot install growpart on unknown OS"
+            return 1
+            ;;
+    esac
+else
+    echo "growpart is already installed"
+fi
+
+# Check if resize2fs is installed (part of e2fsprogs; grows the ext filesystem)
+if ! command -v resize2fs >/dev/null 2>&1; then
+    echo "resize2fs not found, installing..."
+    OS=$(detect_os)
+    install_packages "$OS" "e2fsprogs"
+else
+    echo "resize2fs is already installed"
+fi
+
 echo "Dependencies check complete"

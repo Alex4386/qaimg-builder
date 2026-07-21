@@ -34,8 +34,41 @@ apt-get install -y elasticsearch
 systemctl enable elasticsearch.service
 FLAVOR_SCRIPT
 
+    flavor_credentials_base_snippet
     flavor_initial_provision_base_snippet
     flavor_initial_provision_group_dropin elasticsearch
+
+    cat <<'EOF'
+cat > /usr/local/lib/initial-provision.d/40-elasticsearch-credentials.sh <<'DROPIN'
+#!/bin/bash
+set -e
+# Best-effort: if ELASTIC_PASSWORD is preconfigured in /etc/qaimg/credentials,
+# set the built-in `elastic` superuser password on first boot. ES 8.x otherwise
+# auto-generates this on first start; without a provided value we leave the
+# auto-generated one in place (retrieve it with elasticsearch-reset-password).
+. /usr/local/lib/qaimg-credentials.sh
+RESET=/usr/share/elasticsearch/bin/elasticsearch-reset-password
+[ -x "$RESET" ] || exit 0
+
+elastic_pw="$(qaimg_cred ELASTIC_PASSWORD || true)"
+[ -n "$elastic_pw" ] || exit 0
+
+systemctl is-active --quiet elasticsearch || systemctl start elasticsearch || exit 0
+# Wait for the node to accept the reset (it needs the cluster to be up). The
+# interactive flow asks to confirm, then prompts for the password twice.
+for _ in $(seq 1 30); do
+    if printf 'y\n%s\n%s\n' "$elastic_pw" "$elastic_pw" \
+        | "$RESET" -u elastic -i >/dev/null 2>&1; then
+        break
+    fi
+    sleep 5
+done
+DROPIN
+chmod 0755 /usr/local/lib/initial-provision.d/40-elasticsearch-credentials.sh
+EOF
 }
+
+# Elasticsearch (JVM + package) benefits from build-time headroom.
+export FLAVOR_MIN_DISK_GB="${FLAVOR_MIN_DISK_GB:-8}"
 
 elasticsearch_provisioning_script | build_debian_flavor "$@"

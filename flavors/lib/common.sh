@@ -216,6 +216,151 @@ chmod 0755 "/usr/local/lib/initial-provision.d/${DROPIN_PRIORITY}-group-${DROPIN
 EOF
 }
 
+# Paths for the preconfigured-credentials mechanism.
+FLAVOR_CRED_DEPLOY_FILE=/etc/qaimg/credentials
+FLAVOR_CRED_DEFAULT_FILE=/usr/local/share/qaimg/credentials.default
+FLAVOR_CRED_GENERATED_FILE=/etc/qaimg/credentials.generated
+FLAVOR_CRED_LIB=/usr/local/lib/qaimg-credentials.sh
+
+flavor_credentials_base_snippet() {
+    # Emit provisioning text that installs a small on-image credentials library.
+    #
+    # Credentials are resolved at FIRST BOOT with this precedence:
+    #   1. deploy-time  /etc/qaimg/credentials              (cloud-init write_files / vendor.yaml)
+    #   2. build-time   /usr/local/share/qaimg/credentials.default (baked fallback, optional)
+    #   3. random       generated and persisted to /etc/qaimg/credentials.generated
+    #
+    # Files are flat KEY=VALUE (optionally quoted). Drop-ins source
+    # /usr/local/lib/qaimg-credentials.sh and call qaimg_cred / qaimg_cred_or_random.
+    cat <<'EOF'
+install -d -m 0755 /usr/local/lib /usr/local/share/qaimg
+install -d -m 0700 /etc/qaimg
+cat > /usr/local/lib/qaimg-credentials.sh <<'CREDLIB'
+#!/bin/bash
+# qaimg preconfigured-credentials helper. Source this file.
+QAIMG_CRED_DEPLOY=/etc/qaimg/credentials
+QAIMG_CRED_DEFAULT=/usr/local/share/qaimg/credentials.default
+QAIMG_CRED_GENERATED=/etc/qaimg/credentials.generated
+
+_qaimg_read() {
+    local file="$1" key="$2" line val
+    [ -f "$file" ] || return 1
+    line="$(grep -E "^[[:space:]]*${key}=" "$file" 2>/dev/null | tail -n1)"
+    [ -n "$line" ] || return 1
+    val="${line#*=}"
+    val="${val%\"}"; val="${val#\"}"
+    val="${val%\'}"; val="${val#\'}"
+    printf '%s' "$val"
+}
+
+qaimg_cred() {
+    local key="$1" v
+    for f in "$QAIMG_CRED_DEPLOY" "$QAIMG_CRED_DEFAULT" "$QAIMG_CRED_GENERATED"; do
+        v="$(_qaimg_read "$f" "$key")" && [ -n "$v" ] && { printf '%s' "$v"; return 0; }
+    done
+    return 1
+}
+
+qaimg_cred_or_random() {
+    local key="$1" bytes="${2:-24}" v
+    if v="$(qaimg_cred "$key")" && [ -n "$v" ]; then
+        printf '%s' "$v"; return 0
+    fi
+    v="$(openssl rand -hex "$bytes")"
+    ( umask 077; mkdir -p /etc/qaimg
+      if [ -f "$QAIMG_CRED_GENERATED" ] && grep -qE "^${key}=" "$QAIMG_CRED_GENERATED"; then
+          sed -i -E "s|^${key}=.*|${key}=${v}|" "$QAIMG_CRED_GENERATED"
+      else
+          printf '%s=%s\n' "$key" "$v" >> "$QAIMG_CRED_GENERATED"
+      fi
+      chmod 0600 "$QAIMG_CRED_GENERATED" )
+    printf '%s' "$v"
+}
+CREDLIB
+chmod 0644 /usr/local/lib/qaimg-credentials.sh
+EOF
+}
+
+flavor_sudo_prefix() {
+    # Echo "sudo" when elevation is needed, per QIMI_USE_SUDO (default auto).
+    local mode="${QIMI_USE_SUDO:-auto}"
+    case "$mode" in
+        auto) [[ "$EUID" -ne 0 ]] && { flavor_require_command sudo; echo sudo; } ;;
+        1|true|yes) flavor_require_command sudo; echo sudo ;;
+        0|false|no) ;;
+        *) flavor_die "QIMI_USE_SUDO must be auto, 1, or 0" ;;
+    esac
+}
+
+flavor_image_virtual_bytes() {
+    qemu-img info "$1" 2>/dev/null \
+        | sed -n 's/.*(\([0-9][0-9]*\) bytes).*/\1/p' | head -n1
+}
+
+flavor_grow_root_filesystem() {
+    # Grow the largest partition of a qcow2 and its ext filesystem to fill the
+    # (already-resized) virtual disk. Host-side, via qemu-nbd. Requires root.
+    local image="$1" sudo nbd i part_name part_num fsdev
+    sudo="$(flavor_sudo_prefix)"
+    for c in qemu-nbd partprobe growpart resize2fs lsblk; do
+        flavor_require_command "$c"
+    done
+
+    $sudo modprobe nbd 2>/dev/null || true
+    nbd=""
+    for i in $(seq 0 15); do
+        if [[ ! -e "/sys/block/nbd$i/pid" ]]; then nbd="/dev/nbd$i"; break; fi
+    done
+    [[ -n "$nbd" ]] || flavor_die "No free NBD device to resize image"
+
+    $sudo qemu-nbd --connect="$nbd" "$image" || flavor_die "qemu-nbd connect failed"
+    # shellcheck disable=SC2064
+    trap "$sudo qemu-nbd --disconnect '$nbd' >/dev/null 2>&1 || true" RETURN
+    $sudo partprobe "$nbd" 2>/dev/null || true
+    sleep 1
+
+    # Pick the largest partition (the root fs on Debian genericcloud images).
+    part_name="$(lsblk -brno NAME,SIZE "$nbd" | awk 'NR>1{print $2, $1}' \
+        | sort -nr | head -n1 | awk '{print $2}')"
+    [[ -n "$part_name" ]] || flavor_die "Could not find a partition to grow on $nbd"
+    part_num="$(printf '%s' "$part_name" | sed 's/.*[^0-9]\([0-9][0-9]*\)$/\1/')"
+    fsdev="/dev/$part_name"
+
+    flavor_log "Growing $fsdev (partition $part_num) to fill the disk"
+    $sudo growpart "$nbd" "$part_num" || flavor_log "growpart: nothing to grow"
+    $sudo partprobe "$nbd" 2>/dev/null || true
+    sleep 1
+    $sudo resize2fs "$fsdev" || flavor_die "resize2fs failed on $fsdev"
+}
+
+flavor_maybe_resize_image() {
+    # Resize the working image to at least FLAVOR_MIN_DISK_GB before provisioning
+    # so heavy flavors have build-time headroom. No-op when unset/0 or disabled.
+    local image="$1"
+    local min_gb="${FLAVOR_MIN_DISK_GB:-0}"
+
+    [[ "$min_gb" =~ ^[0-9]+$ ]] || flavor_die "FLAVOR_MIN_DISK_GB must be an integer"
+    [[ "$min_gb" -gt 0 ]] || return 0
+
+    if [[ "${FLAVOR_RESIZE:-1}" != "1" ]]; then
+        flavor_log "Resize to ${min_gb}G requested but FLAVOR_RESIZE!=1; skipping"
+        return 0
+    fi
+
+    flavor_require_command qemu-img
+    local cur_bytes target_bytes
+    cur_bytes="$(flavor_image_virtual_bytes "$image")"
+    target_bytes=$(( min_gb * 1024 * 1024 * 1024 ))
+    if [[ -n "$cur_bytes" && "$cur_bytes" -ge "$target_bytes" ]]; then
+        flavor_log "Image virtual size already >= ${min_gb}G; no resize needed"
+        return 0
+    fi
+
+    flavor_log "Resizing working image to ${min_gb}G"
+    qemu-img resize "$image" "${min_gb}G" || flavor_die "qemu-img resize failed"
+    flavor_grow_root_filesystem "$image"
+}
+
 flavor_publish_image() {
     local working_image="$1"
     local output_image="$2"

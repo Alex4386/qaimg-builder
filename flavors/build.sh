@@ -11,6 +11,7 @@ Usage:
   ./flavors/build.sh --list
 
 Examples:
+  ./flavors/build.sh debian generic
   ./flavors/build.sh debian nginx
   ./flavors/build.sh debian nginx trixie
   ./flavors/build.sh debian nodejs bookworm

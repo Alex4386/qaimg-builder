@@ -12,6 +12,7 @@ SUPABASE_PROJECT="$SUPABASE_DIR/project"
 
 apt-get update
 apt-get install -y ca-certificates curl gnupg git openssl jq
+# openssl also powers first-boot credential generation.
 
 # Supabase self-hosting is distributed as a Docker Compose stack, so bake Docker
 # Engine from Docker's official apt repo (the deb822 way, like the docker flavor).
@@ -75,6 +76,7 @@ UNIT
 systemctl enable supabase.service
 FLAVOR_SCRIPT
 
+    flavor_credentials_base_snippet
     flavor_initial_provision_base_snippet
     flavor_initial_provision_group_dropin docker
 
@@ -82,17 +84,24 @@ FLAVOR_SCRIPT
 cat > /usr/local/lib/initial-provision.d/40-supabase-secrets.sh <<'DROPIN'
 #!/bin/bash
 set -e
-# Replace the shipped example secrets with per-instance random values on first
-# boot so every image does not share the same well-known credentials.
+# On first boot, fill the stack's secrets. Preconfigured values from
+# /etc/qaimg/credentials win; otherwise per-instance random values are generated
+# (and persisted) so no two images share the shipped example credentials.
+. /usr/local/lib/qaimg-credentials.sh
+
 ENV_FILE=/opt/supabase/project/.env
 if [ -f "$ENV_FILE" ] && [ ! -f /opt/supabase/.secrets-done ]; then
-    pg_pw="$(openssl rand -hex 24)"
-    dash_pw="$(openssl rand -hex 24)"
-    secret="$(openssl rand -hex 40)"
+    pg_pw="$(qaimg_cred_or_random POSTGRES_PASSWORD)"
+    dash_user="$(qaimg_cred DASHBOARD_USERNAME || echo supabase)"
+    dash_pw="$(qaimg_cred_or_random DASHBOARD_PASSWORD)"
+    secret="$(qaimg_cred_or_random SECRET_KEY_BASE 40)"
+    jwt_secret="$(qaimg_cred_or_random JWT_SECRET 40)"
     sed -i \
         -e "s|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=${pg_pw}|" \
+        -e "s|^DASHBOARD_USERNAME=.*|DASHBOARD_USERNAME=${dash_user}|" \
         -e "s|^DASHBOARD_PASSWORD=.*|DASHBOARD_PASSWORD=${dash_pw}|" \
         -e "s|^SECRET_KEY_BASE=.*|SECRET_KEY_BASE=${secret}|" \
+        -e "s|^JWT_SECRET=.*|JWT_SECRET=${jwt_secret}|" \
         "$ENV_FILE"
     chown supabase:supabase "$ENV_FILE"
     : > /opt/supabase/.secrets-done
@@ -102,5 +111,9 @@ DROPIN
 chmod 0755 /usr/local/lib/initial-provision.d/40-supabase-secrets.sh
 EOF
 }
+
+# Docker Engine + compose project tree; runtime image pulls need a large deploy
+# disk, but the build itself only needs modest headroom over the ~3G base.
+export FLAVOR_MIN_DISK_GB="${FLAVOR_MIN_DISK_GB:-6}"
 
 supabase_provisioning_script | build_debian_flavor "$@"

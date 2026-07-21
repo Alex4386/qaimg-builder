@@ -34,21 +34,44 @@ apt-get update
 apt-get install -y gitlab-ce
 FLAVOR_SCRIPT
 
+    flavor_credentials_base_snippet
     flavor_initial_provision_base_snippet
 
     cat <<'EOF'
 cat > /usr/local/lib/initial-provision.d/30-gitlab-reconfigure.sh <<'DROPIN'
 #!/bin/bash
 set -e
-# Run the omnibus reconfigure once on first boot using whatever external_url is
-# set in /etc/gitlab/gitlab.rb (defaults to http://gitlab.example.com). The
-# operator should edit gitlab.rb and re-run `gitlab-ctl reconfigure` afterwards.
-if command -v gitlab-ctl >/dev/null 2>&1; then
+# On first boot, apply preconfigured GITLAB_EXTERNAL_URL and GITLAB_ROOT_PASSWORD
+# (from /etc/qaimg/credentials) then run the omnibus reconfigure once. If no
+# external_url is provided, the value already in gitlab.rb is kept.
+command -v gitlab-ctl >/dev/null 2>&1 || exit 0
+. /usr/local/lib/qaimg-credentials.sh
+
+ext_url="$(qaimg_cred GITLAB_EXTERNAL_URL || true)"
+if [ -n "$ext_url" ]; then
+    if grep -qE "^\s*external_url " /etc/gitlab/gitlab.rb; then
+        sed -i -E "s|^\s*external_url .*|external_url \"${ext_url}\"|" \
+            /etc/gitlab/gitlab.rb
+    else
+        printf 'external_url "%s"\n' "$ext_url" >> /etc/gitlab/gitlab.rb
+    fi
+fi
+
+# initial_root_password is only honored on the FIRST reconfigure (before the
+# DB is seeded), so set it via the documented environment variable.
+root_pw="$(qaimg_cred GITLAB_ROOT_PASSWORD || true)"
+if [ -n "$root_pw" ] && [ ! -f /etc/gitlab/initial_root_password ]; then
+    GITLAB_ROOT_PASSWORD="$root_pw" gitlab-ctl reconfigure
+else
     gitlab-ctl reconfigure
 fi
 DROPIN
 chmod 0755 /usr/local/lib/initial-provision.d/30-gitlab-reconfigure.sh
 EOF
 }
+
+# GitLab omnibus needs several GB just to install and reconfigure. Grow the
+# image at build time (operator can override with FLAVOR_MIN_DISK_GB).
+export FLAVOR_MIN_DISK_GB="${FLAVOR_MIN_DISK_GB:-8}"
 
 gitlab_provisioning_script | build_debian_flavor "$@"

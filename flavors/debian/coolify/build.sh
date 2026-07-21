@@ -53,4 +53,8 @@ chmod 0755 /usr/local/lib/initial-provision.d/40-coolify-install.sh
 EOF
 }
 
+# Docker Engine at build time; Coolify + its containers install at first boot and
+# want a large deploy disk. Give the build modest headroom over the ~3G base.
+export FLAVOR_MIN_DISK_GB="${FLAVOR_MIN_DISK_GB:-6}"
+
 coolify_provisioning_script | build_debian_flavor "$@"

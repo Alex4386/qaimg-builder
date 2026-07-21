@@ -107,6 +107,9 @@ cloud application blueprints:
 # List available flavors
 ./flavors/build.sh --list
 
+# Build Debian Bookworm with just the first-run machinery (no app)
+./flavors/build.sh debian generic bookworm
+
 # Build Debian Bookworm with Nginx and qemu-guest-agent
 ./flavors/build.sh debian nginx bookworm
 
@@ -162,10 +165,21 @@ cloud application blueprints:
 Flavor builders live at `flavors/<distribution>/<flavor>/build.sh`. See
 [`flavors/README.md`](flavors/README.md) for usage and authoring details.
 
+##### Preconfigured credentials
+
+Flavors that manage secrets (PostgreSQL, MariaDB, Supabase, Strapi, GitLab,
+Elasticsearch) resolve them at first boot rather than baking fixed values into
+the image. Supply them at deploy time through cloud-init by writing
+`/etc/qaimg/credentials`; keys you omit are generated randomly and persisted to
+`/etc/qaimg/credentials.generated`. See [`examples/vendor.yaml`](examples/vendor.yaml)
+for a ready-to-adapt cloud-init file and
+[`flavors/README.md`](flavors/README.md) for the full mechanism.
+
 #### Output
 Modified images are saved with `-qa` suffix:
 - `noble-server-cloudimg-amd64-qa.img`
 - `bookworm-generic-amd64-qa.qcow2`
+- `bookworm-generic-amd64-qa.generic.qcow2` (generic first-run flavor)
 - `bookworm-generic-amd64-qa.nginx.qcow2` (Nginx flavor)
 - `bookworm-generic-amd64-qa.nodejs.qcow2` (Node.js flavor)
 - `bookworm-generic-amd64-qa.wireguard.qcow2` (WireGuard flavor)

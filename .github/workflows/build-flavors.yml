@@ -42,7 +42,7 @@ jobs:
     - name: Set up dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y qemu-utils parted wget
+        sudo apt-get install -y qemu-utils parted wget cloud-guest-utils e2fsprogs
 
     - name: Build Debian Bookworm base image
       run: |
@@ -66,6 +66,7 @@ jobs:
       fail-fast: false
       matrix:
         flavor:
+          - generic
           - nginx
           - nodejs
           - wireguard
@@ -75,13 +76,21 @@ jobs:
           - postgresql
           - minecraft-vanilla
           - minecraft-paper
+          - palworld
+          - openclaw
+          - prometheus
+          - elasticsearch
+          - strapi
+          - gitlab
+          - coolify
+          - supabase
     steps:
     - uses: actions/checkout@v4
 
     - name: Set up dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y qemu-utils parted wget
+        sudo apt-get install -y qemu-utils parted wget cloud-guest-utils e2fsprogs
 
     - name: Download Debian Bookworm base image
       uses: actions/download-artifact@v4
