@@ -363,6 +363,7 @@ BASE_IMAGE="$TMP_ROOT/base.qcow2" \
 OUTPUT_DIR="$TMP_ROOT/output" \
 QIMI_PATH="$TMP_ROOT/qimi" \
 QIMI_USE_SUDO=0 \
+FLAVOR_RESIZE=0 \
 QIMI_CAPTURE_FILE="$TMP_ROOT/palworld-script" \
 "$PROJECT_ROOT/flavors/debian/palworld/build.sh" bookworm
 

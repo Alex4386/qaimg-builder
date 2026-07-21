@@ -14,6 +14,10 @@ The output is `bookworm-generic-amd64-qa.palworld.qcow2`.
 The server runs as the dedicated, non-login `palworld` system user. Server data
 and configuration live in `/var/lib/palworld`.
 
+The dedicated server is several GB, so the build grows the image to
+`FLAVOR_MIN_DISK_GB` (default 16 GiB) before the SteamCMD download; override it
+if needed, e.g. `FLAVOR_MIN_DISK_GB=24 ./flavors/build.sh debian palworld bookworm`.
+
 ## Ports
 
 Palworld uses UDP by default:

@@ -88,4 +88,9 @@ FLAVOR_SCRIPT
     flavor_initial_provision_group_dropin palworld
 }
 
+# The Palworld dedicated server is ~8 GB installed, and SteamCMD needs extra
+# staging space while downloading, so the ~3 GB base image is far too small.
+# Grow the build image (operator can override with FLAVOR_MIN_DISK_GB).
+export FLAVOR_MIN_DISK_GB="${FLAVOR_MIN_DISK_GB:-16}"
+
 palworld_provisioning_script | build_debian_flavor "$@"
