@@ -1,0 +1,81 @@
+#!/bin/bash
+
+source "$(dirname "${BASH_SOURCE[0]}")/../../lib/debian.sh"
+
+strapi_provisioning_script() {
+    cat <<'FLAVOR_SCRIPT'
+set -e
+export DEBIAN_FRONTEND=noninteractive
+
+NODE_MAJOR=22
+STRAPI_DIR=/opt/strapi
+STRAPI_APP="$STRAPI_DIR/app"
+
+apt-get update
+apt-get install -y apt-transport-https ca-certificates curl gnupg git build-essential
+
+# Node.js LTS from NodeSource (Strapi supports Active/Maintenance LTS only).
+install -m 0755 -d /usr/share/keyrings
+curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | \
+    gpg --dearmor --batch --yes -o /usr/share/keyrings/nodesource.gpg
+chmod a+r /usr/share/keyrings/nodesource.gpg
+
+cat > /etc/apt/sources.list.d/nodesource.sources <<EOF
+Types: deb
+URIs: https://deb.nodesource.com/node_${NODE_MAJOR}.x
+Suites: nodistro
+Components: main
+Architectures: $(dpkg --print-architecture)
+Signed-By: /usr/share/keyrings/nodesource.gpg
+EOF
+
+apt-get update
+apt-get install -y nodejs
+
+# Dedicated non-login system user owns the app tree.
+if ! id -u strapi >/dev/null 2>&1; then
+    useradd --system --user-group --home-dir "$STRAPI_DIR" \
+        --shell /usr/sbin/nologin strapi
+fi
+install -d -o strapi -g strapi "$STRAPI_DIR"
+
+# Scaffold a production project non-interactively. SQLite keeps the image
+# self-contained; switch DATABASE_CLIENT in the .env for an external database.
+sudo -u strapi -H env HOME="$STRAPI_DIR" npx --yes create-strapi-app@latest app \
+    --no-run --skip-cloud --use-npm --dbclient=sqlite --js \
+    --dir "$STRAPI_APP"
+
+# Build the admin panel for production.
+sudo -u strapi -H env HOME="$STRAPI_DIR" NODE_ENV=production \
+    npm --prefix "$STRAPI_APP" run build
+chown -R strapi:strapi "$STRAPI_DIR"
+
+cat > /etc/systemd/system/strapi.service <<'UNIT'
+[Unit]
+Description=Strapi Headless CMS
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=strapi
+Group=strapi
+WorkingDirectory=/opt/strapi/app
+Environment=HOME=/opt/strapi
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/npm run start
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+UNIT
+
+systemctl enable strapi.service
+FLAVOR_SCRIPT
+
+    flavor_initial_provision_base_snippet
+    flavor_initial_provision_group_dropin strapi
+}
+
+strapi_provisioning_script | build_debian_flavor "$@"

@@ -21,6 +21,14 @@ Examples:
   ./flavors/build.sh debian postgresql bookworm
   ./flavors/build.sh debian minecraft-vanilla bookworm
   ./flavors/build.sh debian minecraft-paper bookworm
+  ./flavors/build.sh debian palworld bookworm
+  ./flavors/build.sh debian openclaw bookworm
+  ./flavors/build.sh debian coolify bookworm
+  ./flavors/build.sh debian supabase bookworm
+  ./flavors/build.sh debian gitlab bookworm
+  ./flavors/build.sh debian strapi bookworm
+  ./flavors/build.sh debian prometheus bookworm
+  ./flavors/build.sh debian elasticsearch bookworm
 EOF
 }
 

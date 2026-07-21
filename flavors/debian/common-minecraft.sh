@@ -51,4 +51,7 @@ UNIT
 
 systemctl enable minecraft.service
 COMMON_SUFFIX
+
+    flavor_initial_provision_base_snippet
+    flavor_initial_provision_group_dropin minecraft
 }

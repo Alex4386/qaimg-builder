@@ -31,6 +31,15 @@ sudo -u minecraft env SHELL=/bin/sh script -q -c 'screen -r minecraft' /dev/null
 
 Press `Ctrl-A`, then `D`, to detach without stopping the server.
 
+## Login user access
+
+The default login user does not exist when the image is built. A generic oneshot
+`initial-provision.service` runs at first boot (ordered `After=cloud-final.service`)
+and adds the cloud-init login user to the `minecraft` group via a drop-in in
+`/usr/local/lib/initial-provision.d`. Re-log in after the first boot for the new
+group to take effect. Until then, use `sudo` as shown above. See
+[`flavors/README.md`](../../README.md) for the full first-boot provisioning mechanism.
+
 The flavor writes `eula=true` to `/var/lib/minecraft/eula.txt`. Build and use
 this image only if you accept the
 [Minecraft End User License Agreement](https://www.minecraft.net/eula).

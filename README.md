@@ -133,6 +133,30 @@ cloud application blueprints:
 
 # Build Debian Bookworm with a Paper Minecraft server
 ./flavors/build.sh debian minecraft-paper bookworm
+
+# Build Debian Bookworm with a Palworld dedicated server
+./flavors/build.sh debian palworld bookworm
+
+# Build Debian Bookworm with OpenClaw (personal AI assistant gateway)
+./flavors/build.sh debian openclaw bookworm
+
+# Build Debian Bookworm with Coolify (self-hosted PaaS)
+./flavors/build.sh debian coolify bookworm
+
+# Build Debian Bookworm with self-hosted Supabase
+./flavors/build.sh debian supabase bookworm
+
+# Build Debian Bookworm with GitLab CE
+./flavors/build.sh debian gitlab bookworm
+
+# Build Debian Bookworm with Strapi
+./flavors/build.sh debian strapi bookworm
+
+# Build Debian Bookworm with Prometheus
+./flavors/build.sh debian prometheus bookworm
+
+# Build Debian Bookworm with Elasticsearch
+./flavors/build.sh debian elasticsearch bookworm
 ```
 
 Flavor builders live at `flavors/<distribution>/<flavor>/build.sh`. See
@@ -151,6 +175,14 @@ Modified images are saved with `-qa` suffix:
 - `bookworm-generic-amd64-qa.postgresql.qcow2` (PostgreSQL flavor)
 - `bookworm-generic-amd64-qa.minecraft-vanilla.qcow2` (Minecraft Vanilla flavor)
 - `bookworm-generic-amd64-qa.minecraft-paper.qcow2` (Minecraft Paper flavor)
+- `bookworm-generic-amd64-qa.palworld.qcow2` (Palworld flavor)
+- `bookworm-generic-amd64-qa.openclaw.qcow2` (OpenClaw flavor)
+- `bookworm-generic-amd64-qa.coolify.qcow2` (Coolify flavor)
+- `bookworm-generic-amd64-qa.supabase.qcow2` (Supabase flavor)
+- `bookworm-generic-amd64-qa.gitlab.qcow2` (GitLab CE flavor)
+- `bookworm-generic-amd64-qa.strapi.qcow2` (Strapi flavor)
+- `bookworm-generic-amd64-qa.prometheus.qcow2` (Prometheus flavor)
+- `bookworm-generic-amd64-qa.elasticsearch.qcow2` (Elasticsearch flavor)
 - `rockylinux-9-GenericCloud.latest-qa.qcow2`
 - `AlmaLinux-9-GenericCloud-latest-qa.x86_64.qcow2`
 - `Arch-Linux-x86_64-cloudimg-qa.qcow2`

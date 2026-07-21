@@ -1,0 +1,67 @@
+# Debian GitLab CE flavor
+
+This flavor installs [GitLab Community Edition](https://about.gitlab.com/)
+(the omnibus package) from GitLab's official APT repository.
+
+## Build
+
+```bash
+./flavors/build.sh debian gitlab bookworm
+```
+
+The output is `bookworm-generic-amd64-qa.gitlab.qcow2`.
+
+GitLab omnibus bundles and supervises its own services (Puma, Sidekiq,
+PostgreSQL, Redis, Gitaly, NGINX, etc.) under the `gitlab-runsvdir.service`
+systemd unit installed by the package. The bundled services run as the
+omnibus-managed `git`, `gitlab-*`, and related system users; you do not manage
+them individually.
+
+## Ports
+
+- `80/tcp` bundled NGINX (HTTP)
+- `443/tcp` bundled NGINX (HTTPS, if configured)
+- `22/tcp` Git over SSH (shares the host SSH port)
+
+## First boot
+
+The omnibus package is installed **without** `EXTERNAL_URL`, so the expensive
+`gitlab-ctl reconfigure` does not run during the image build. Instead, a generic
+oneshot `initial-provision.service` runs at first boot (ordered
+`After=cloud-final.service`) and executes a drop-in in
+`/usr/local/lib/initial-provision.d` that runs `gitlab-ctl reconfigure` once.
+
+Set your real external URL and re-run reconfigure after the instance is up:
+
+```bash
+sudo sed -i "s|^external_url .*|external_url 'https://gitlab.example.com'|" \
+    /etc/gitlab/gitlab.rb
+sudo gitlab-ctl reconfigure
+```
+
+The initial root password is generated at reconfigure time and written to
+`/etc/gitlab/initial_root_password` (valid for 24 hours).
+
+## Service management
+
+```bash
+sudo gitlab-ctl status
+sudo gitlab-ctl restart
+sudo gitlab-ctl stop
+sudo systemctl status gitlab-runsvdir
+```
+
+## Configuration
+
+- `/etc/gitlab/gitlab.rb` main configuration (run `gitlab-ctl reconfigure` after
+  edits)
+- `/var/opt/gitlab` application data
+- `/var/log/gitlab` logs
+
+## Caveats
+
+- GitLab omnibus is resource hungry: at least 4 GB RAM (8 GB recommended) and
+  several GB of disk are required for a usable instance.
+- The first `gitlab-ctl reconfigure` at boot can take several minutes; GitLab is
+  not reachable until it finishes.
+- The omnibus package is published for `amd64` and `arm64` only.

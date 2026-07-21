@@ -46,10 +46,22 @@ if ! grep -qx 'debian/minecraft-paper' <<< "$AVAILABLE_FLAVORS"; then
     exit 1
 fi
 
+if ! grep -qx 'debian/palworld' <<< "$AVAILABLE_FLAVORS"; then
+    printf 'Dispatcher did not list debian/palworld\n' >&2
+    exit 1
+fi
+
 if grep -q 'common-minecraft' <<< "$AVAILABLE_FLAVORS"; then
     printf 'Dispatcher listed the shared Minecraft routines as a flavor\n' >&2
     exit 1
 fi
+
+for flavor in openclaw coolify supabase gitlab strapi prometheus elasticsearch; do
+    if ! grep -qx "debian/$flavor" <<< "$AVAILABLE_FLAVORS"; then
+        printf 'Dispatcher did not list debian/%s\n' "$flavor" >&2
+        exit 1
+    fi
+done
 
 printf 'test image\n' > "$TMP_ROOT/base.qcow2"
 
@@ -65,6 +77,31 @@ set -euo pipefail
 printf '%s' "$8" > "$QIMI_CAPTURE_FILE"
 EOF
 chmod +x "$TMP_ROOT/qimi"
+
+assert_initial_provision_base() {
+    local script="$1"
+
+    grep -Fq '/etc/sudoers.d/90-cloud-init-users' "$script"
+    grep -Fq 'getent passwd 1000' "$script"
+    grep -Fq 'HOME_TEMPLATE=/usr/local/cloud-init/home-template' "$script"
+    grep -Fq 'DROPIN_DIR=/usr/local/lib/initial-provision.d' "$script"
+    grep -Fq 'cp -a "$HOME_TEMPLATE/." "$login_home/"' "$script"
+    grep -Fq 'for dropin in "$DROPIN_DIR"/*.sh; do' "$script"
+    grep -Fq '/etc/systemd/system/initial-provision.service' "$script"
+    grep -qx 'After=cloud-final.service' "$script"
+    grep -qx 'Wants=cloud-final.service' "$script"
+    grep -qx 'ConditionPathExists=!/var/lib/initial-provision/.done' "$script"
+    grep -qx 'systemctl enable initial-provision.service' "$script"
+}
+
+assert_initial_provision_group() {
+    local script="$1" group="$2"
+
+    grep -qx "DROPIN_GROUP=$group" "$script"
+    grep -Fq "/usr/local/lib/initial-provision.d/\${DROPIN_PRIORITY}-group-\${DROPIN_GROUP}.sh" \
+        "$script"
+    grep -Fq 'usermod -aG "\$group" "\$login_user"' "$script"
+}
 
 assert_minecraft_common() {
     local script="$1"
@@ -82,7 +119,9 @@ assert_minecraft_common() {
         "$script"
     grep -q '^WantedBy=multi-user.target$' "$script"
     grep -q '^systemctl enable minecraft.service$' "$script"
-    if grep -Eq 'User=debian|cloud-final|ExecStartPre=|chown -R|server.properties|ufw|iptables' \
+    assert_initial_provision_base "$script"
+    assert_initial_provision_group "$script" minecraft
+    if grep -Eq 'User=debian|ExecStartPre=|server.properties|ufw|iptables' \
         "$script"; then
         printf 'Minecraft flavor contains unexpected customization\n' >&2
         exit 1
@@ -245,6 +284,169 @@ grep -Fq "jq -e '.channel == \"STABLE\"'" "$TMP_ROOT/minecraft-paper-script"
 grep -q 'sha256sum -c -$' "$TMP_ROOT/minecraft-paper-script"
 if grep -q 'piston-meta.mojang.com' "$TMP_ROOT/minecraft-paper-script"; then
     printf 'Minecraft Paper flavor contains Vanilla provisioning\n' >&2
+    exit 1
+fi
+
+BASE_IMAGE="$TMP_ROOT/base.qcow2" \
+OUTPUT_DIR="$TMP_ROOT/output" \
+QIMI_PATH="$TMP_ROOT/qimi" \
+QIMI_USE_SUDO=0 \
+QIMI_CAPTURE_FILE="$TMP_ROOT/palworld-script" \
+"$PROJECT_ROOT/flavors/debian/palworld/build.sh" bookworm
+
+PALWORLD_IMAGE="$TMP_ROOT/output/bookworm-generic-amd64-qa.palworld.qcow2"
+cmp "$TMP_ROOT/base.qcow2" "$PALWORLD_IMAGE"
+bash -n "$TMP_ROOT/palworld-script"
+grep -q '^STEAM_APP_ID=2394010$' "$TMP_ROOT/palworld-script"
+grep -q '^apt-get install -y steamcmd$' "$TMP_ROOT/palworld-script"
+grep -q 'useradd --system --user-group' "$TMP_ROOT/palworld-script"
+grep -q -- '--shell /usr/sbin/nologin palworld' "$TMP_ROOT/palworld-script"
+grep -Fq '+app_update "$STEAM_APP_ID" validate' "$TMP_ROOT/palworld-script"
+grep -Fq 'ExecStart=/var/lib/palworld/PalServer.sh' "$TMP_ROOT/palworld-script"
+grep -q '^User=palworld$' "$TMP_ROOT/palworld-script"
+grep -q '^systemctl enable palworld.service$' "$TMP_ROOT/palworld-script"
+assert_initial_provision_base "$TMP_ROOT/palworld-script"
+assert_initial_provision_group "$TMP_ROOT/palworld-script" palworld
+
+build_flavor() {
+    local flavor="$1"
+    BASE_IMAGE="$TMP_ROOT/base.qcow2" \
+    OUTPUT_DIR="$TMP_ROOT/output" \
+    QIMI_PATH="$TMP_ROOT/qimi" \
+    QIMI_USE_SUDO=0 \
+    QIMI_CAPTURE_FILE="$TMP_ROOT/$flavor-script" \
+    "$PROJECT_ROOT/flavors/debian/$flavor/build.sh" bookworm
+    cmp "$TMP_ROOT/base.qcow2" \
+        "$TMP_ROOT/output/bookworm-generic-amd64-qa.$flavor.qcow2"
+    bash -n "$TMP_ROOT/$flavor-script"
+}
+
+# Prometheus: Debian package + enabled service + login-user group.
+build_flavor prometheus
+grep -q '^apt-get install -y prometheus$' "$TMP_ROOT/prometheus-script"
+grep -qx 'systemctl enable prometheus.service' "$TMP_ROOT/prometheus-script"
+assert_initial_provision_base "$TMP_ROOT/prometheus-script"
+assert_initial_provision_group "$TMP_ROOT/prometheus-script" prometheus
+if grep -Eq 'github.com/prometheus|/usr/local/bin/prometheus|useradd|tar ' \
+    "$TMP_ROOT/prometheus-script"; then
+    printf 'Prometheus flavor contains unexpected customization\n' >&2
+    exit 1
+fi
+
+# Elasticsearch: Elastic 8.x apt repo + enabled service + login-user group.
+build_flavor elasticsearch
+grep -Fq 'https://artifacts.elastic.co/GPG-KEY-elasticsearch' \
+    "$TMP_ROOT/elasticsearch-script"
+grep -q '^URIs: https://artifacts.elastic.co/packages/8.x/apt$' \
+    "$TMP_ROOT/elasticsearch-script"
+grep -q '^Suites: stable$' "$TMP_ROOT/elasticsearch-script"
+grep -q '^Signed-By: /usr/share/keyrings/elasticsearch-keyring.gpg$' \
+    "$TMP_ROOT/elasticsearch-script"
+grep -q '^apt-get install -y elasticsearch$' "$TMP_ROOT/elasticsearch-script"
+grep -qx 'systemctl enable elasticsearch.service' \
+    "$TMP_ROOT/elasticsearch-script"
+assert_initial_provision_base "$TMP_ROOT/elasticsearch-script"
+assert_initial_provision_group "$TMP_ROOT/elasticsearch-script" elasticsearch
+if grep -Eq 'packages/9.x|elasticsearch-[0-9]|dpkg -i|apt-key' \
+    "$TMP_ROOT/elasticsearch-script"; then
+    printf 'Elasticsearch flavor contains unexpected customization\n' >&2
+    exit 1
+fi
+
+# GitLab CE: gitlab-ce apt repo, deferred reconfigure drop-in (no EXTERNAL_URL).
+build_flavor gitlab
+grep -Fq 'https://packages.gitlab.com/gitlab/gitlab-ce/gpgkey' \
+    "$TMP_ROOT/gitlab-script"
+grep -q '^URIs: https://packages.gitlab.com/gitlab/gitlab-ce/debian/$' \
+    "$TMP_ROOT/gitlab-script"
+grep -q '^Suites: $VERSION_CODENAME$' "$TMP_ROOT/gitlab-script"
+grep -q '^apt-get install -y gitlab-ce$' "$TMP_ROOT/gitlab-script"
+grep -Fq 'gitlab-ctl reconfigure' "$TMP_ROOT/gitlab-script"
+grep -Fq '/usr/local/lib/initial-provision.d/30-gitlab-reconfigure.sh' \
+    "$TMP_ROOT/gitlab-script"
+assert_initial_provision_base "$TMP_ROOT/gitlab-script"
+if grep -Eq 'EXTERNAL_URL=|script.deb.sh' "$TMP_ROOT/gitlab-script"; then
+    printf 'GitLab flavor contains unexpected customization\n' >&2
+    exit 1
+fi
+
+# Strapi: NodeSource Node.js + scaffolded project + enabled service + group.
+build_flavor strapi
+grep -q '^NODE_MAJOR=22$' "$TMP_ROOT/strapi-script"
+grep -Fq 'https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key' \
+    "$TMP_ROOT/strapi-script"
+grep -q '^apt-get install -y nodejs$' "$TMP_ROOT/strapi-script"
+grep -q 'useradd --system --user-group' "$TMP_ROOT/strapi-script"
+grep -q -- '--shell /usr/sbin/nologin strapi' "$TMP_ROOT/strapi-script"
+grep -Fq 'create-strapi-app@latest' "$TMP_ROOT/strapi-script"
+grep -q '^User=strapi$' "$TMP_ROOT/strapi-script"
+grep -q '^systemctl enable strapi.service$' "$TMP_ROOT/strapi-script"
+assert_initial_provision_base "$TMP_ROOT/strapi-script"
+assert_initial_provision_group "$TMP_ROOT/strapi-script" strapi
+if grep -Eq 'pm2|nginx|ufw' "$TMP_ROOT/strapi-script"; then
+    printf 'Strapi flavor contains unexpected customization\n' >&2
+    exit 1
+fi
+
+# Coolify: bake Docker + defer official installer to first boot + docker group.
+build_flavor coolify
+grep -Fq 'https://download.docker.com/linux/debian/gpg' "$TMP_ROOT/coolify-script"
+grep -q '^apt-get install -y docker-ce docker-ce-cli containerd.io \\$' \
+    "$TMP_ROOT/coolify-script"
+grep -qx 'systemctl enable docker.service' "$TMP_ROOT/coolify-script"
+grep -Fq 'https://cdn.coollabs.io/coolify/install.sh' "$TMP_ROOT/coolify-script"
+grep -Fq '/usr/local/lib/initial-provision.d/40-coolify-install.sh' \
+    "$TMP_ROOT/coolify-script"
+assert_initial_provision_base "$TMP_ROOT/coolify-script"
+assert_initial_provision_group "$TMP_ROOT/coolify-script" docker
+if grep -Eq 'get.docker.com|docker.io' "$TMP_ROOT/coolify-script"; then
+    printf 'Coolify flavor contains unexpected customization\n' >&2
+    exit 1
+fi
+
+# Supabase: bake Docker + compose stack + enabled service + secrets drop-in.
+build_flavor supabase
+grep -Fq 'https://download.docker.com/linux/debian/gpg' "$TMP_ROOT/supabase-script"
+grep -Fq 'https://github.com/supabase/supabase.git' "$TMP_ROOT/supabase-script"
+grep -Fq 'sparse-checkout set docker' "$TMP_ROOT/supabase-script"
+grep -q 'useradd --system --user-group' "$TMP_ROOT/supabase-script"
+grep -q -- '--shell /usr/sbin/nologin supabase' "$TMP_ROOT/supabase-script"
+grep -Fq 'docker compose up -d --wait' "$TMP_ROOT/supabase-script"
+grep -q '^systemctl enable supabase.service$' "$TMP_ROOT/supabase-script"
+grep -Fq '/usr/local/lib/initial-provision.d/40-supabase-secrets.sh' \
+    "$TMP_ROOT/supabase-script"
+assert_initial_provision_base "$TMP_ROOT/supabase-script"
+assert_initial_provision_group "$TMP_ROOT/supabase-script" docker
+if grep -Eq 'supabase.link/setup.sh|get.docker.com' "$TMP_ROOT/supabase-script"; then
+    printf 'Supabase flavor contains unexpected customization\n' >&2
+    exit 1
+fi
+
+# OpenClaw: Node.js AI assistant gateway CLI, per-user daemon, NO system service.
+build_flavor openclaw
+grep -q '^NODE_MAJOR=24$' "$TMP_ROOT/openclaw-script"
+grep -Fq 'https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key' \
+    "$TMP_ROOT/openclaw-script"
+grep -q '^URIs: https://deb.nodesource.com/node_${NODE_MAJOR}\.x$' \
+    "$TMP_ROOT/openclaw-script"
+grep -q '^apt-get install -y nodejs$' "$TMP_ROOT/openclaw-script"
+grep -q '^npm install -g openclaw@latest$' "$TMP_ROOT/openclaw-script"
+grep -Fq '/usr/local/lib/initial-provision.d/30-openclaw-linger.sh' \
+    "$TMP_ROOT/openclaw-script"
+grep -Fq 'loginctl enable-linger "$login_user"' "$TMP_ROOT/openclaw-script"
+grep -Fq '/usr/local/cloud-init/home-template/README-openclaw.md' \
+    "$TMP_ROOT/openclaw-script"
+assert_initial_provision_base "$TMP_ROOT/openclaw-script"
+# Must not carry any Captain Claw / SDL2 game-build remnants.
+if grep -Eiq 'CLAW\.REZ|libsdl|cmake|/usr/local/games|openclaw/openclaw\.git' \
+    "$TMP_ROOT/openclaw-script"; then
+    printf 'OpenClaw flavor contains stale game-build content\n' >&2
+    exit 1
+fi
+# Must not install a system-wide service for openclaw.
+if grep -Eq 'systemctl enable openclaw|/etc/systemd/system/openclaw' \
+    "$TMP_ROOT/openclaw-script"; then
+    printf 'OpenClaw flavor must not install a systemd system service\n' >&2
     exit 1
 fi
 
