@@ -42,7 +42,26 @@ Credentials come from `/etc/qaimg/credentials` (delivered via cloud-init, see
 
 If `GITLAB_ROOT_PASSWORD` is not provided, the initial root password is
 generated at reconfigure time and written to `/etc/gitlab/initial_root_password`
-(valid for 24 hours). See [`flavors/README.md`](../../README.md) for the full
+(valid for 24 hours).
+
+### Example: provision the root password via cloud-init
+
+Pass this as the instance's vendor-data or user-data at deploy time:
+
+```yaml
+#cloud-config
+write_files:
+  - path: /etc/qaimg/credentials
+    owner: root:root
+    permissions: '0600'
+    content: |
+      GITLAB_EXTERNAL_URL=https://gitlab.example.com
+      GITLAB_ROOT_PASSWORD=super-secret-root-at-least-8-chars
+```
+
+The external URL is written to `gitlab.rb` and the `root` password is applied on
+the first `gitlab-ctl reconfigure` at boot. Then sign in as `root` at the
+external URL. See [`flavors/README.md`](../../README.md) for the full
 credentials mechanism.
 
 To change the external URL later:

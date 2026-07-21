@@ -69,8 +69,29 @@ ones, then restarts Strapi. Values come from `/etc/qaimg/credentials` (see
 | `STRAPI_JWT_SECRET` | `JWT_SECRET` |
 
 Anything omitted is generated randomly and persisted to
-`/etc/qaimg/credentials.generated`. See [`flavors/README.md`](../../README.md)
-for the full credentials mechanism.
+`/etc/qaimg/credentials.generated`.
+
+### Example: provision secrets via cloud-init
+
+Pass this as the instance's vendor-data or user-data at deploy time:
+
+```yaml
+#cloud-config
+write_files:
+  - path: /etc/qaimg/credentials
+    owner: root:root
+    permissions: '0600'
+    content: |
+      STRAPI_APP_KEYS=key1abc,key2def
+      STRAPI_API_TOKEN_SALT=random-api-token-salt
+      STRAPI_ADMIN_JWT_SECRET=random-admin-jwt-secret
+      STRAPI_TRANSFER_TOKEN_SALT=random-transfer-salt
+      STRAPI_JWT_SECRET=random-jwt-secret
+```
+
+These are written to `/opt/strapi/app/.env` and Strapi is restarted on first
+boot so it picks them up. See [`flavors/README.md`](../../README.md) for the
+full credentials mechanism.
 
 ## Login user access
 

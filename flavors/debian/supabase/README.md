@@ -66,6 +66,26 @@ generated randomly and persisted to `/etc/qaimg/credentials.generated`:
 | `SECRET_KEY_BASE` | stack secret key base |
 | `JWT_SECRET` | JWT signing secret |
 
+### Example: provision secrets via cloud-init
+
+Pass this as the instance's vendor-data or user-data at deploy time:
+
+```yaml
+#cloud-config
+write_files:
+  - path: /etc/qaimg/credentials
+    owner: root:root
+    permissions: '0600'
+    content: |
+      POSTGRES_PASSWORD=super-secret-postgres
+      DASHBOARD_USERNAME=admin
+      DASHBOARD_PASSWORD=super-secret-dashboard
+      JWT_SECRET=a-very-long-random-jwt-secret-at-least-32-chars
+```
+
+These land in `/opt/supabase/project/.env` before the stack starts. Log in to
+Studio at `http://<host>:8000` with the dashboard username/password above.
+
 The login user is also added to the `docker` group at first boot. Re-log in for
 the new group to take effect. See [`flavors/README.md`](../../README.md) for the
 full credentials mechanism.

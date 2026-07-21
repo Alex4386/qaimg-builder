@@ -54,6 +54,27 @@ retrieve or reset it with:
 sudo /usr/share/elasticsearch/bin/elasticsearch-reset-password -u elastic
 ```
 
+### Example: provision the elastic password via cloud-init
+
+Pass this as the instance's vendor-data or user-data at deploy time:
+
+```yaml
+#cloud-config
+write_files:
+  - path: /etc/qaimg/credentials
+    owner: root:root
+    permissions: '0600'
+    content: |
+      ELASTIC_PASSWORD=super-secret-elastic
+```
+
+On first boot the built-in `elastic` superuser password is set to this value
+(best effort, once the node is up). Verify with:
+
+```bash
+curl -sk -u elastic:super-secret-elastic https://localhost:9200
+```
+
 See [`flavors/README.md`](../../README.md) for the full credentials mechanism.
 
 ## Login user access
