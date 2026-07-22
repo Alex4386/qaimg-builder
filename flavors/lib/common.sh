@@ -112,6 +112,50 @@ flavor_exec_in_image() {
         "$QIMI_PATH" exec "$image" \
             --nameserver "$nameserver" -- /bin/bash -c "$script"
     fi
+
+    # qimi customizes the image with a backing qemu process that can keep the
+    # qcow2 write lock held for a short moment after the CLI returns. If we hand
+    # the image off (publish + qemu-img check) before that lock is released the
+    # next qemu-img call fails with: Failed to get shared "write" lock.
+    # Block until the image can be opened again so callers see a settled file.
+    flavor_wait_for_image_unlock "$image"
+}
+
+flavor_wait_for_image_unlock() {
+    # Poll qemu-img info until it can acquire the image lock (i.e. no lingering
+    # writer holds it), bounded by FLAVOR_UNLOCK_TIMEOUT seconds (default 120).
+    # Only a lock error is retried; any other qemu-img outcome (success, or a
+    # non-lock failure such as a bogus/stub image in tests) returns immediately.
+    #
+    # A single clean probe can be a false positive: a backing qemu may release
+    # and briefly re-take the lock while shutting down. Require
+    # FLAVOR_UNLOCK_SETTLE consecutive clean probes (default 3, one per second)
+    # before declaring the image settled so the handoff to qemu-img check is
+    # reliable.
+    local image="$1"
+    local timeout="${FLAVOR_UNLOCK_TIMEOUT:-120}"
+    local settle="${FLAVOR_UNLOCK_SETTLE:-3}"
+
+    command -v qemu-img >/dev/null 2>&1 || return 0
+
+    local waited=0 err ok=0
+    while :; do
+        if err="$(qemu-img info "$image" 2>&1 >/dev/null)"; then
+            ok=$(( ok + 1 ))
+            [[ "$ok" -ge "$settle" ]] && return 0
+        else
+            case "$err" in
+                *"lock"*) ok=0 ;;  # a writer still holds it; reset the streak
+                *) return 0 ;;     # not a lock issue; nothing to wait on
+            esac
+        fi
+        if [[ "$waited" -ge "$timeout" ]]; then
+            flavor_log "Warning: image still locked after ${timeout}s; continuing"
+            return 0
+        fi
+        sleep 1
+        waited=$(( waited + 1 ))
+    done
 }
 
 # Paths for the generic first-boot provisioning mechanism.
@@ -297,6 +341,26 @@ flavor_image_virtual_bytes() {
         | sed -n 's/.*(\([0-9][0-9]*\) bytes).*/\1/p' | head -n1
 }
 
+flavor_nbd_disconnect() {
+    # Disconnect a qemu-nbd device and wait for the kernel to finish tearing it
+    # down. `qemu-nbd --disconnect` returns before the backing process exits and
+    # releases the qcow2 write lock, so a following image open (qimi, qemu-img
+    # check) can otherwise fail with: Failed to get shared "write" lock.
+    local sudo="$1" nbd="$2"
+    local dev="${nbd##*/}"
+    local timeout="${FLAVOR_UNLOCK_TIMEOUT:-120}" waited=0
+
+    $sudo qemu-nbd --disconnect "$nbd" >/dev/null 2>&1 || true
+    while [[ -e "/sys/block/$dev/pid" ]]; do
+        if [[ "$waited" -ge "$timeout" ]]; then
+            flavor_log "Warning: $nbd still connected after ${timeout}s; continuing"
+            return 0
+        fi
+        sleep 1
+        waited=$(( waited + 1 ))
+    done
+}
+
 flavor_grow_root_filesystem() {
     # Grow the largest partition of a qcow2 and its ext filesystem to fill the
     # (already-resized) virtual disk. Host-side, via qemu-nbd. Requires root.
@@ -315,7 +379,7 @@ flavor_grow_root_filesystem() {
 
     $sudo qemu-nbd --connect="$nbd" "$image" || flavor_die "qemu-nbd connect failed"
     # shellcheck disable=SC2064
-    trap "$sudo qemu-nbd --disconnect '$nbd' >/dev/null 2>&1 || true" RETURN
+    trap "flavor_nbd_disconnect '$sudo' '$nbd'" RETURN
     $sudo partprobe "$nbd" 2>/dev/null || true
     sleep 1
 
@@ -390,5 +454,12 @@ flavor_publish_image() {
     fi
 
     mv "$working_image" "$output_image"
+
+    # Ensure the published image is fully unlocked before returning. Callers
+    # (e.g. CI) run `qemu-img check` immediately after this function, and a
+    # lingering backing writer would make that fail with:
+    #   Failed to get shared "write" lock.
+    flavor_wait_for_image_unlock "$output_image"
+
     flavor_log "Image written to $output_image"
 }
