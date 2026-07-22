@@ -339,9 +339,12 @@ flavor_grow_root_filesystem() {
     fstype="$(lsblk -brno FSTYPE "$fsdev" 2>/dev/null | head -n1)"
     case "$fstype" in
         ext2|ext3|ext4|"")
-            $sudo e2fsck -f -p "$fsdev"
-            local rc=$?
-            [[ "$rc" -ge 2 ]] && flavor_die "e2fsck failed on $fsdev (rc=$rc)"
+            # e2fsck exits non-zero when it fixes something (rc 1) or when errors
+            # remain (rc >= 4). "|| rc=$?" keeps set -e from aborting on rc 1;
+            # only rc >= 4 is a genuine failure. (Bit 2 = "should reboot".)
+            local rc=0
+            $sudo e2fsck -f -p "$fsdev" || rc=$?
+            [[ "$rc" -ge 4 ]] && flavor_die "e2fsck failed on $fsdev (rc=$rc)"
             $sudo resize2fs "$fsdev" || flavor_die "resize2fs failed on $fsdev"
             ;;
         *)
