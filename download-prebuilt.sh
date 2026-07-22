@@ -34,6 +34,7 @@ ARGUMENTS:
 OPTIONS:
     -r, --release TAG    Download from specific release tag (default: latest)
     -d, --dir DIR        Download directory (default: ./downloads)
+    -f, --flavor FLAVOR  Download a flavored image variant (debian only)
     -l, --list           List available releases and exit
     -a, --all            Download all available images from the release
     -h, --help           Show this help message
@@ -46,6 +47,7 @@ EXAMPLES:
     $0 rocky 10                        # Download Rocky Linux 10
     $0 alma 10                         # Download AlmaLinux 10
     $0 arch                            # Download Arch Linux
+    $0 -f docker debian bookworm       # Download Debian Bookworm docker flavor
     $0 -a                              # Download all images from latest release
     $0 -r v2025.07.29 ubuntu jammy     # Download from specific release
     $0 -r v2025.07.29 -a              # Download all images from specific release
@@ -58,6 +60,10 @@ SUPPORTED DISTRIBUTIONS:
     rocky     - 10, 9, 8
     alma      - 10, 9, 8
     arch      - latest
+
+SUPPORTED FLAVORS (debian only):
+    docker, mariadb, minecraft-paper, minecraft-vanilla, nginx,
+    nodejs, postgresql, wireguard
 
 EOF
 }
@@ -152,6 +158,7 @@ get_download_url() {
 get_asset_name() {
     local distro="$1"
     local version="$2"
+    local flavor="$3"
     
     case "$distro" in
         ubuntu)
@@ -164,7 +171,11 @@ get_asset_name() {
             if [ -z "$version" ]; then
                 version="bookworm"  # default
             fi
-            echo "${version}-generic-amd64-qa.qcow2"
+            if [ -n "$flavor" ]; then
+                echo "${version}-generic-amd64-qa.${flavor}.qcow2"
+            else
+                echo "${version}-generic-amd64-qa.qcow2"
+            fi
             ;;
         rocky)
             if [ -z "$version" ]; then
@@ -301,6 +312,7 @@ main() {
     local download_all_flag="false"
     local distribution=""
     local version=""
+    local flavor=""
     
     # Parse arguments
     while [[ $# -gt 0 ]]; do
@@ -311,6 +323,10 @@ main() {
                 ;;
             -d|--dir)
                 DOWNLOAD_DIR="$2"
+                shift 2
+                ;;
+            -f|--flavor)
+                flavor="$2"
                 shift 2
                 ;;
             -l|--list)
@@ -388,8 +404,14 @@ main() {
         exit 1
     fi
     
+    # Validate flavor usage
+    if [ -n "$flavor" ] && [ "$distribution" != "debian" ]; then
+        print_error "Flavors are only supported for debian"
+        exit 1
+    fi
+    
     # Get asset name
-    local asset_name=$(get_asset_name "$distribution" "$version")
+    local asset_name=$(get_asset_name "$distribution" "$version" "$flavor")
     print_info "Looking for asset: $asset_name"
     
     # Get download URL
