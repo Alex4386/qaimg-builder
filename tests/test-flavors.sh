@@ -375,10 +375,11 @@ grep -q '^apt-get install -y steamcmd$' "$TMP_ROOT/palworld-script"
 grep -q 'useradd --system --user-group' "$TMP_ROOT/palworld-script"
 grep -q -- '--shell /usr/sbin/nologin palworld' "$TMP_ROOT/palworld-script"
 grep -Fq '+app_update "$STEAM_APP_ID" validate' "$TMP_ROOT/palworld-script"
-# SteamCMD aborts with "Missing configuration" (exit 8) when the install dir is
-# set before login on a fresh client, so +login must precede +force_install_dir.
-if ! grep -Pzoq '\+login anonymous(?s).*\+force_install_dir' "$TMP_ROOT/palworld-script"; then
-    printf 'Palworld flavor must run +login before +force_install_dir\n' >&2
+# SteamCMD aborts with "Please use force_install_dir before logon!" (exit 8)
+# when the install dir is set after login, so +force_install_dir must precede
+# +login.
+if ! grep -Pzoq '\+force_install_dir(?s).*\+login anonymous' "$TMP_ROOT/palworld-script"; then
+    printf 'Palworld flavor must run +force_install_dir before +login\n' >&2
     exit 1
 fi
 grep -Fq 'ExecStart=/var/lib/palworld/PalServer.sh' "$TMP_ROOT/palworld-script"
