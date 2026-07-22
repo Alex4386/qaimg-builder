@@ -7,6 +7,12 @@ set -e
 # Source qimi installer
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../common/install-qimi.sh"
+source "$SCRIPT_DIR/../common/resize-image.sh"
+
+# Grow the working image before running apt update/upgrade + installs, which
+# need more room than the ~2-3 GiB the upstream cloud image ships. Operator can
+# override or disable with IMAGE_RESIZE=0.
+IMAGE_MIN_DISK_GB="${IMAGE_MIN_DISK_GB:-8}"
 
 # Get codename from first argument, default to noble
 CODENAME="${1:-noble}"
@@ -41,6 +47,9 @@ fi
 # Create working copy
 echo "Creating working copy..."
 cp "$IMAGE_NAME" "temp_$OUTPUT_NAME"
+
+# Grow the disk so the update/install below has headroom.
+resize_qcow2_image "temp_$OUTPUT_NAME" "$IMAGE_MIN_DISK_GB"
 
 # Install qemu-guest-agent using qimi (temporary mount)
 echo "Installing qemu-guest-agent..."

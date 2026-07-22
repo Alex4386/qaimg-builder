@@ -24,7 +24,7 @@ jobs:
     - name: Set up dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y qemu-utils parted wget cloud-guest-utils e2fsprogs
+        sudo apt-get install -y qemu-utils parted wget cloud-guest-utils e2fsprogs xfsprogs
     
     - name: Build Ubuntu ${{ matrix.codename }} image
       run: |
@@ -50,7 +50,7 @@ jobs:
     - name: Set up dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y qemu-utils parted wget cloud-guest-utils e2fsprogs
+        sudo apt-get install -y qemu-utils parted wget cloud-guest-utils e2fsprogs xfsprogs
     
     - name: Build Debian ${{ matrix.codename }} image
       run: |
@@ -96,7 +96,7 @@ jobs:
     - name: Set up dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y qemu-utils parted wget cloud-guest-utils e2fsprogs
+        sudo apt-get install -y qemu-utils parted wget cloud-guest-utils e2fsprogs xfsprogs
 
     - name: Download Debian Bookworm base image
       uses: actions/download-artifact@v4
@@ -131,7 +131,7 @@ jobs:
     - name: Set up dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y qemu-utils parted wget cloud-guest-utils e2fsprogs
+        sudo apt-get install -y qemu-utils parted wget cloud-guest-utils e2fsprogs xfsprogs
     
     - name: Build Rocky Linux ${{ matrix.version }} image
       run: |
@@ -157,7 +157,7 @@ jobs:
     - name: Set up dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y qemu-utils parted wget cloud-guest-utils e2fsprogs
+        sudo apt-get install -y qemu-utils parted wget cloud-guest-utils e2fsprogs xfsprogs
     
     - name: Build AlmaLinux ${{ matrix.version }} image
       run: |
@@ -180,7 +180,7 @@ jobs:
     - name: Set up dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y qemu-utils parted wget cloud-guest-utils e2fsprogs
+        sudo apt-get install -y qemu-utils parted wget cloud-guest-utils e2fsprogs xfsprogs
     
     - name: Build Arch Linux image
       run: |
@@ -208,26 +208,27 @@ jobs:
       with:
         path: release-artifacts
     
-    # Install qemu-img for compression and checksum generation
-    # - name: Install qemu-utils
-    #   run: |
-    #     sudo apt-get update
-    #     sudo apt-get install -y qemu-utils
+    - name: Install qemu-utils
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y qemu-utils
 
-    # - name: Compress and create checksums
-    #   run: |
-    #     cd release-artifacts
-    #     # Compress qcow2 files using qemu-img
-    #     find . -type f -name "*.qcow2" | while read file; do
-    #       echo "Compressing $file with qemu-img..."
-    #       qemu-img convert -c -O qcow2 "$file" "${file}.compressed"
-    #       mv "${file}.compressed" "$file"
-    #     done
-        
-    #     # Create checksums for all image files
-    #     find . -type f -name "*.img" -o -name "*.qcow2" | while read file; do
-    #       sha256sum "$file" > "$file.sha256"
-    #     done
+    - name: Compress images and create checksums
+      run: |
+        cd release-artifacts
+        # Compress every image with qcow2 clustered compression. Ubuntu ships
+        # ".img" files that are qcow2 internally, so both extensions convert to
+        # a compressed qcow2 in place while keeping their original name.
+        while IFS= read -r -d '' file; do
+          echo "Compressing $file with qemu-img..."
+          qemu-img convert -c -O qcow2 "$file" "${file}.compressed"
+          mv "${file}.compressed" "$file"
+        done < <(find . -type f \( -name '*.img' -o -name '*.qcow2' \) -print0)
+
+        # Create checksums for all compressed image files.
+        while IFS= read -r -d '' file; do
+          sha256sum "$file" > "$file.sha256"
+        done < <(find . -type f \( -name '*.img' -o -name '*.qcow2' \) -print0)
 
     - name: Set release tag
       id: set_tag

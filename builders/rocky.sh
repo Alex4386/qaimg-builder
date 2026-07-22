@@ -7,6 +7,12 @@ set -e
 # Source qimi installer
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../common/install-qimi.sh"
+source "$SCRIPT_DIR/../common/resize-image.sh"
+
+# Grow the working image before running dnf/yum update + installs, which need
+# more room than the upstream cloud image ships. Rocky uses an xfs root, which
+# resize-image.sh grows via xfs_growfs. Override/disable with IMAGE_RESIZE=0.
+IMAGE_MIN_DISK_GB="${IMAGE_MIN_DISK_GB:-10}"
 
 # Get version from first argument, default to 9
 VERSION="${1:-9}"
@@ -113,6 +119,9 @@ fi
 # Create working copy
 echo "Creating working copy..."
 cp "$IMAGE_NAME" "temp_$OUTPUT_NAME"
+
+# Grow the disk so the update/install below has headroom.
+resize_qcow2_image "temp_$OUTPUT_NAME" "$IMAGE_MIN_DISK_GB"
 
 # Install qemu-guest-agent using qimi (temporary mount)
 echo "Installing qemu-guest-agent..."

@@ -41,9 +41,11 @@ install -d -o strapi -g strapi "$STRAPI_DIR"
 
 # Scaffold a production project non-interactively. SQLite keeps the image
 # self-contained; switch DATABASE_CLIENT in the .env for an external database.
-sudo -u strapi -H env HOME="$STRAPI_DIR" npx --yes create-strapi-app@latest app \
+# The target directory is a positional argument (there is no --dir flag), and
+# --non-interactive is required to skip all prompts in a headless build.
+sudo -u strapi -H env HOME="$STRAPI_DIR" npx --yes create-strapi-app@latest "$STRAPI_APP" \
     --no-run --skip-cloud --use-npm --dbclient=sqlite --js \
-    --dir "$STRAPI_APP"
+    --no-git-init --non-interactive
 
 # Build the admin panel for production.
 sudo -u strapi -H env HOME="$STRAPI_DIR" NODE_ENV=production \
@@ -96,6 +98,7 @@ api_salt="$(qaimg_cred_or_random STRAPI_API_TOKEN_SALT 16)"
 admin_jwt="$(qaimg_cred_or_random STRAPI_ADMIN_JWT_SECRET 16)"
 xfer_salt="$(qaimg_cred_or_random STRAPI_TRANSFER_TOKEN_SALT 16)"
 jwt_secret="$(qaimg_cred_or_random STRAPI_JWT_SECRET 16)"
+enc_key="$(qaimg_cred_or_random STRAPI_ENCRYPTION_KEY 16)"
 
 set_kv() {
     local key="$1" val="$2"
@@ -110,6 +113,7 @@ set_kv API_TOKEN_SALT "$api_salt"
 set_kv ADMIN_JWT_SECRET "$admin_jwt"
 set_kv TRANSFER_TOKEN_SALT "$xfer_salt"
 set_kv JWT_SECRET "$jwt_secret"
+set_kv ENCRYPTION_KEY "$enc_key"
 chown strapi:strapi "$ENV_FILE"
 : > /opt/strapi/.secrets-done
 chown strapi:strapi /opt/strapi/.secrets-done

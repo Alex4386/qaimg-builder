@@ -44,9 +44,18 @@ install -d -o palworld -g palworld "$PALWORLD_DIR"
 
 # SteamCMD bootstraps into $HOME/.steam, so HOME must point at the palworld
 # home. Run login shell env (-H sets HOME to the target user's home).
+#
+# Prime SteamCMD once so it self-updates and writes its config before any real
+# work. On a fresh client, issuing +force_install_dir/+app_update in the same
+# invocation as the very first bootstrap fails with "Missing configuration"
+# (exit 8), which is exactly what CI hit.
+sudo -u palworld -H env HOME="$PALWORLD_DIR" /usr/games/steamcmd +quit
+
+# +login MUST come before +force_install_dir; when the install dir is set first
+# SteamCMD cannot resolve its own configuration and aborts with exit 8.
 sudo -u palworld -H env HOME="$PALWORLD_DIR" /usr/games/steamcmd \
-    +force_install_dir "$PALWORLD_DIR" \
     +login anonymous \
+    +force_install_dir "$PALWORLD_DIR" \
     +app_update "$STEAM_APP_ID" validate \
     +quit
 

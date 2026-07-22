@@ -125,4 +125,14 @@ else
     echo "resize2fs is already installed"
 fi
 
+# Check if xfs_growfs is installed (part of xfsprogs; grows xfs root
+# filesystems used by Rocky/AlmaLinux cloud images at build time)
+if ! command -v xfs_growfs >/dev/null 2>&1; then
+    echo "xfs_growfs not found, installing..."
+    OS=$(detect_os)
+    install_packages "$OS" "xfsprogs"
+else
+    echo "xfs_growfs is already installed"
+fi
+
 echo "Dependencies check complete"

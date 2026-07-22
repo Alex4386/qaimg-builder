@@ -375,6 +375,12 @@ grep -q '^apt-get install -y steamcmd$' "$TMP_ROOT/palworld-script"
 grep -q 'useradd --system --user-group' "$TMP_ROOT/palworld-script"
 grep -q -- '--shell /usr/sbin/nologin palworld' "$TMP_ROOT/palworld-script"
 grep -Fq '+app_update "$STEAM_APP_ID" validate' "$TMP_ROOT/palworld-script"
+# SteamCMD aborts with "Missing configuration" (exit 8) when the install dir is
+# set before login on a fresh client, so +login must precede +force_install_dir.
+if ! grep -Pzoq '\+login anonymous(?s).*\+force_install_dir' "$TMP_ROOT/palworld-script"; then
+    printf 'Palworld flavor must run +login before +force_install_dir\n' >&2
+    exit 1
+fi
 grep -Fq 'ExecStart=/var/lib/palworld/PalServer.sh' "$TMP_ROOT/palworld-script"
 grep -q '^User=palworld$' "$TMP_ROOT/palworld-script"
 grep -q '^systemctl enable palworld.service$' "$TMP_ROOT/palworld-script"
@@ -468,6 +474,14 @@ grep -q '^apt-get install -y nodejs$' "$TMP_ROOT/strapi-script"
 grep -q 'useradd --system --user-group' "$TMP_ROOT/strapi-script"
 grep -q -- '--shell /usr/sbin/nologin strapi' "$TMP_ROOT/strapi-script"
 grep -Fq 'create-strapi-app@latest' "$TMP_ROOT/strapi-script"
+# create-strapi-app takes the target directory as a positional argument; the
+# --dir flag was removed upstream and fails with "unknown option '--dir'".
+if grep -Eq '(npx|create-strapi-app).*--dir ' "$TMP_ROOT/strapi-script"; then
+    printf 'Strapi flavor must not pass the removed --dir flag\n' >&2
+    exit 1
+fi
+grep -Fq -- '--non-interactive' "$TMP_ROOT/strapi-script"
+grep -Fq 'set_kv ENCRYPTION_KEY' "$TMP_ROOT/strapi-script"
 grep -q '^User=strapi$' "$TMP_ROOT/strapi-script"
 grep -q '^systemctl enable strapi.service$' "$TMP_ROOT/strapi-script"
 assert_initial_provision_base "$TMP_ROOT/strapi-script"

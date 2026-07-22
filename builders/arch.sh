@@ -7,6 +7,11 @@ set -e
 # Source qimi installer
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../common/install-qimi.sh"
+source "$SCRIPT_DIR/../common/resize-image.sh"
+
+# Grow the working image before running pacman -Sy + installs, which need more
+# room than the upstream cloud image ships. Override/disable with IMAGE_RESIZE=0.
+IMAGE_MIN_DISK_GB="${IMAGE_MIN_DISK_GB:-8}"
 
 # Configuration
 ARCH_URL="${MIRROR:-https://geo.mirror.pkgbuild.com/images/latest}/Arch-Linux-x86_64-cloudimg.qcow2"
@@ -87,6 +92,9 @@ fi
 # Create working copy
 echo "Creating working copy..."
 cp "$IMAGE_NAME" "temp_$OUTPUT_NAME"
+
+# Grow the disk so the pacman sync/install below has headroom.
+resize_qcow2_image "temp_$OUTPUT_NAME" "$IMAGE_MIN_DISK_GB"
 
 # Install qemu-guest-agent using qimi (temporary mount)
 echo "Installing qemu-guest-agent..."

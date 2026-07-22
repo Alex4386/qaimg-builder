@@ -24,7 +24,7 @@ jobs:
     - name: Set up dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y qemu-utils parted wget cloud-guest-utils e2fsprogs
+        sudo apt-get install -y qemu-utils parted wget cloud-guest-utils e2fsprogs xfsprogs
     
     - name: Build Arch Linux image
       run: |
