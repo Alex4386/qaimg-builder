@@ -24,7 +24,7 @@ jobs:
     - name: Set up dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y qemu-utils parted wget cloud-guest-utils e2fsprogs xfsprogs
+        sudo apt-get install -y qemu-utils parted wget cloud-guest-utils e2fsprogs xfsprogs btrfs-progs
     
     - name: Build Ubuntu ${{ matrix.codename }} image
       run: |
@@ -50,7 +50,7 @@ jobs:
     - name: Set up dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y qemu-utils parted wget cloud-guest-utils e2fsprogs xfsprogs
+        sudo apt-get install -y qemu-utils parted wget cloud-guest-utils e2fsprogs xfsprogs btrfs-progs
     
     - name: Build Debian ${{ matrix.codename }} image
       run: |
@@ -70,6 +70,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
+      max-parallel: 4
       matrix:
         flavor:
           - generic
@@ -96,7 +97,7 @@ jobs:
     - name: Set up dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y qemu-utils parted wget cloud-guest-utils e2fsprogs xfsprogs
+        sudo apt-get install -y qemu-utils parted wget cloud-guest-utils e2fsprogs xfsprogs btrfs-progs
 
     - name: Download Debian Bookworm base image
       uses: actions/download-artifact@v4
@@ -131,7 +132,7 @@ jobs:
     - name: Set up dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y qemu-utils parted wget cloud-guest-utils e2fsprogs xfsprogs
+        sudo apt-get install -y qemu-utils parted wget cloud-guest-utils e2fsprogs xfsprogs btrfs-progs
     
     - name: Build Rocky Linux ${{ matrix.version }} image
       run: |
@@ -157,7 +158,7 @@ jobs:
     - name: Set up dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y qemu-utils parted wget cloud-guest-utils e2fsprogs xfsprogs
+        sudo apt-get install -y qemu-utils parted wget cloud-guest-utils e2fsprogs xfsprogs btrfs-progs
     
     - name: Build AlmaLinux ${{ matrix.version }} image
       run: |
@@ -180,7 +181,7 @@ jobs:
     - name: Set up dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y qemu-utils parted wget cloud-guest-utils e2fsprogs xfsprogs
+        sudo apt-get install -y qemu-utils parted wget cloud-guest-utils e2fsprogs xfsprogs btrfs-progs
     
     - name: Build Arch Linux image
       run: |

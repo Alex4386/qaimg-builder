@@ -104,6 +104,23 @@ resize_grow_root_filesystem() {
             fi
             rmdir "$mnt" 2>/dev/null || true
             ;;
+        btrfs)
+            # btrfs grows online, so mount it and resize the root subvolume to
+            # max. Arch Linux cloud images use btrfs for the root partition.
+            resize_require_command btrfs || return 1
+            resize_require_command mount || return 1
+            local mnt
+            mnt="$(mktemp -d "${TMPDIR:-/tmp}/qaimg-btrfs.XXXXXX")"
+            if $sudo mount -t btrfs "$fsdev" "$mnt" 2>/dev/null; then
+                $sudo btrfs filesystem resize max "$mnt" || { $sudo umount "$mnt"; rmdir "$mnt"; resize_die "btrfs resize failed on $fsdev"; return 1; }
+                $sudo umount "$mnt"
+            else
+                rmdir "$mnt"
+                resize_die "Could not mount btrfs $fsdev to grow it"
+                return 1
+            fi
+            rmdir "$mnt" 2>/dev/null || true
+            ;;
         *)
             resize_die "Unsupported root filesystem for resize: $fstype"
             return 1

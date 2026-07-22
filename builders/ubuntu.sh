@@ -54,9 +54,15 @@ resize_qcow2_image "temp_$OUTPUT_NAME" "$IMAGE_MIN_DISK_GB"
 # Install qemu-guest-agent using qimi (temporary mount)
 echo "Installing qemu-guest-agent..."
 sudo "$QIMI_PATH" exec "temp_$OUTPUT_NAME" --nameserver 1.1.1.1 -- /bin/bash -c "
+    set -e
+    # Make apt resilient to flaky mirrors.
+    printf 'Acquire::Retries \"5\";\n' > /etc/apt/apt.conf.d/80-retries
     apt-get update
     apt-get install -y qemu-guest-agent
     systemctl enable qemu-guest-agent
+    # Ship with empty apt lists so downstream consumers fetch fresh indices.
+    apt-get clean
+    rm -rf /var/lib/apt/lists/*
 "
 
 # Move to final name

@@ -27,7 +27,7 @@ jobs:
     - name: Set up dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y qemu-utils parted wget cloud-guest-utils e2fsprogs xfsprogs
+        sudo apt-get install -y qemu-utils parted wget cloud-guest-utils e2fsprogs xfsprogs btrfs-progs
     
     - name: Build Ubuntu ${{ matrix.codename }} image
       run: |

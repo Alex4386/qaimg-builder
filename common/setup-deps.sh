@@ -135,4 +135,18 @@ else
     echo "xfs_growfs is already installed"
 fi
 
+# Check if btrfs is installed (part of btrfs-progs; grows btrfs root
+# filesystems used by Arch Linux cloud images at build time)
+if ! command -v btrfs >/dev/null 2>&1; then
+    echo "btrfs not found, installing..."
+    OS=$(detect_os)
+    case "$OS" in
+        "debian"|"arch") install_packages "$OS" "btrfs-progs" ;;
+        "fedora"|"rhel") install_packages "$OS" "btrfs-progs" ;;
+        *) echo "Error: Cannot install btrfs on unknown OS"; return 1 ;;
+    esac
+else
+    echo "btrfs is already installed"
+fi
+
 echo "Dependencies check complete"

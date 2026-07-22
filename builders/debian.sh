@@ -69,9 +69,18 @@ resize_qcow2_image "temp_$OUTPUT_NAME" "$IMAGE_MIN_DISK_GB"
 # Install qemu-guest-agent using qimi (temporary mount)
 echo "Installing qemu-guest-agent..."
 sudo "$QIMI_PATH" exec "temp_$OUTPUT_NAME" --nameserver 1.1.1.1 -- /bin/bash -c "
+    set -e
+    # Make apt resilient to the flaky deb.debian.org mirror round-robin.
+    printf 'Acquire::Retries \"5\";\n' > /etc/apt/apt.conf.d/80-retries
     apt-get update
     apt-get install -y qemu-guest-agent
     systemctl enable qemu-guest-agent
+    # Ship the base image with empty apt lists so every downstream flavor's
+    # 'apt-get update' does a full, complete index fetch instead of reporting
+    # cached 'Hit' lines against a possibly-incomplete Packages index (which
+    # intermittently caused 'Unable to locate package' in flavor builds).
+    apt-get clean
+    rm -rf /var/lib/apt/lists/*
 "
 
 # Move to final name

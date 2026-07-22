@@ -42,7 +42,7 @@ jobs:
     - name: Set up dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y qemu-utils parted wget cloud-guest-utils e2fsprogs xfsprogs
+        sudo apt-get install -y qemu-utils parted wget cloud-guest-utils e2fsprogs xfsprogs btrfs-progs
 
     - name: Build Debian Bookworm base image
       run: |
@@ -64,6 +64,7 @@ jobs:
     timeout-minutes: 45
     strategy:
       fail-fast: false
+      max-parallel: 4
       matrix:
         flavor:
           - generic
@@ -90,7 +91,7 @@ jobs:
     - name: Set up dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y qemu-utils parted wget cloud-guest-utils e2fsprogs xfsprogs
+        sudo apt-get install -y qemu-utils parted wget cloud-guest-utils e2fsprogs xfsprogs btrfs-progs
 
     - name: Download Debian Bookworm base image
       uses: actions/download-artifact@v4
