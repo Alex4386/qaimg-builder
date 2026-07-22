@@ -55,6 +55,7 @@ sudo -u palworld -H env HOME="$PALWORLD_DIR" /usr/games/steamcmd +quit
 # "Please use force_install_dir before logon!" and aborts with exit 8 when the
 # install dir is set after login.
 sudo -u palworld -H env HOME="$PALWORLD_DIR" /usr/games/steamcmd \
+    +@sSteamCmdForcePlatformType linux \
     +force_install_dir "$PALWORLD_DIR" \
     +login anonymous \
     +app_update "$STEAM_APP_ID" validate \

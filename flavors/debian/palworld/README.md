@@ -64,6 +64,7 @@ Re-run SteamCMD to pull the latest server build:
 ```bash
 sudo systemctl stop palworld
 sudo -u palworld -H env HOME=/var/lib/palworld /usr/games/steamcmd \
+    +@sSteamCmdForcePlatformType linux \
     +force_install_dir /var/lib/palworld \
     +login anonymous +app_update 2394010 validate +quit
 sudo systemctl start palworld
