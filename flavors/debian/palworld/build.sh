@@ -51,11 +51,12 @@ install -d -o palworld -g palworld "$PALWORLD_DIR"
 # (exit 8), which is exactly what CI hit.
 sudo -u palworld -H env HOME="$PALWORLD_DIR" /usr/games/steamcmd +quit
 
-# +login MUST come before +force_install_dir; when the install dir is set first
-# SteamCMD cannot resolve its own configuration and aborts with exit 8.
+# +force_install_dir MUST come before +login; SteamCMD refuses to install with
+# "Please use force_install_dir before logon!" and aborts with exit 8 when the
+# install dir is set after login.
 sudo -u palworld -H env HOME="$PALWORLD_DIR" /usr/games/steamcmd \
-    +login anonymous \
     +force_install_dir "$PALWORLD_DIR" \
+    +login anonymous \
     +app_update "$STEAM_APP_ID" validate \
     +quit
 
