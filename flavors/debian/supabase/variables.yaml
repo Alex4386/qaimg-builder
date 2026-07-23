@@ -1,0 +1,33 @@
+# Image variable manifest for the Supabase flavor.
+#
+# Declares the preconfigured credentials this image reads from
+# /etc/qaimg/credentials on first boot (via qaimg_cred). Deliver values as
+# cloud-init vendor-data; see ../../../examples/vendor.yaml and
+# ../../README.md ("Preconfigured credentials").
+variables:
+  - key: POSTGRES_PASSWORD
+    label: Postgres password
+    description: Database password for the Supabase stack. Random if omitted.
+    required: false
+    secret: true
+  - key: DASHBOARD_USERNAME
+    label: Studio dashboard username
+    description: Login username for the Supabase Studio dashboard. Defaults to `supabase`.
+    default: supabase
+    required: false
+    secret: false
+  - key: DASHBOARD_PASSWORD
+    label: Studio dashboard password
+    description: Login password for the Supabase Studio dashboard. Random if omitted.
+    required: false
+    secret: true
+  - key: JWT_SECRET
+    label: JWT secret
+    description: At least 32 characters. Random if omitted.
+    required: false
+    secret: true
+  - key: SECRET_KEY_BASE
+    label: Secret key base
+    description: Application secret key base. Random if omitted.
+    required: false
+    secret: true

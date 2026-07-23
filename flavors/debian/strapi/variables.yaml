@@ -1,0 +1,37 @@
+# Image variable manifest for the Strapi flavor.
+#
+# Declares the preconfigured credentials this image reads from
+# /etc/qaimg/credentials on first boot (via qaimg_cred). Deliver values as
+# cloud-init vendor-data; see ../../../examples/vendor.yaml and
+# ../../README.md ("Preconfigured credentials").
+variables:
+  - key: STRAPI_APP_KEYS
+    label: App keys
+    description: Comma-separated session app keys. Random pair if omitted.
+    required: false
+    secret: true
+  - key: STRAPI_API_TOKEN_SALT
+    label: API token salt
+    description: Salt used for API tokens. Random if omitted.
+    required: false
+    secret: true
+  - key: STRAPI_ADMIN_JWT_SECRET
+    label: Admin JWT secret
+    description: Secret for signing admin JWTs. Random if omitted.
+    required: false
+    secret: true
+  - key: STRAPI_TRANSFER_TOKEN_SALT
+    label: Transfer token salt
+    description: Salt used for transfer tokens. Random if omitted.
+    required: false
+    secret: true
+  - key: STRAPI_JWT_SECRET
+    label: JWT secret
+    description: Secret for signing content-API JWTs. Random if omitted.
+    required: false
+    secret: true
+  - key: STRAPI_ENCRYPTION_KEY
+    label: Encryption key
+    description: Key used for encrypted fields. Random if omitted.
+    required: false
+    secret: true

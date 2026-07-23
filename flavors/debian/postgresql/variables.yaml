@@ -1,0 +1,27 @@
+# Image variable manifest for the PostgreSQL flavor.
+#
+# Declares the preconfigured credentials this image reads from
+# /etc/qaimg/credentials on first boot (via qaimg_cred). Deliver values as
+# cloud-init vendor-data; see ../../../examples/vendor.yaml and
+# ../../README.md ("Preconfigured credentials").
+variables:
+  - key: POSTGRES_PASSWORD
+    label: Postgres superuser password
+    description: Password set for the built-in `postgres` role. Random if omitted.
+    required: false
+    secret: true
+  - key: POSTGRES_APP_DB
+    label: Application database name
+    description: When set, an application database is created on first boot.
+    required: false
+    secret: false
+  - key: POSTGRES_APP_USER
+    label: Application role name
+    description: When set, an application login role is created on first boot.
+    required: false
+    secret: false
+  - key: POSTGRES_APP_PASSWORD
+    label: Application role password
+    description: Password for the application role. Random if omitted.
+    required: false
+    secret: true

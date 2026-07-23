@@ -1,0 +1,27 @@
+# Image variable manifest for the MariaDB flavor.
+#
+# Declares the preconfigured credentials this image reads from
+# /etc/qaimg/credentials on first boot (via qaimg_cred). Deliver values as
+# cloud-init vendor-data; see ../../../examples/vendor.yaml and
+# ../../README.md ("Preconfigured credentials").
+variables:
+  - key: MARIADB_ROOT_PASSWORD
+    label: MariaDB root password
+    description: Password set for the `root` user. Random if omitted.
+    required: false
+    secret: true
+  - key: MARIADB_APP_DB
+    label: Application database name
+    description: When set, an application database is created on first boot.
+    required: false
+    secret: false
+  - key: MARIADB_APP_USER
+    label: Application user name
+    description: When set, an application user is created on first boot.
+    required: false
+    secret: false
+  - key: MARIADB_APP_PASSWORD
+    label: Application user password
+    description: Password for the application user. Random if omitted.
+    required: false
+    secret: true

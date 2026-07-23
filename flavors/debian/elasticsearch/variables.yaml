@@ -1,0 +1,12 @@
+# Image variable manifest for the Elasticsearch flavor.
+#
+# Declares the preconfigured credentials this image reads from
+# /etc/qaimg/credentials on first boot (via qaimg_cred). Deliver values as
+# cloud-init vendor-data; see ../../../examples/vendor.yaml and
+# ../../README.md ("Preconfigured credentials").
+variables:
+  - key: ELASTIC_PASSWORD
+    label: Elastic superuser password
+    description: Password for the built-in `elastic` user. If omitted, ES 8.x auto-generates one (retrieve with elasticsearch-reset-password).
+    required: false
+    secret: true

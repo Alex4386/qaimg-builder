@@ -1,0 +1,17 @@
+# Image variable manifest for the GitLab flavor.
+#
+# Declares the preconfigured credentials this image reads from
+# /etc/qaimg/credentials on first boot (via qaimg_cred). Deliver values as
+# cloud-init vendor-data; see ../../../examples/vendor.yaml and
+# ../../README.md ("Preconfigured credentials").
+variables:
+  - key: GITLAB_EXTERNAL_URL
+    label: External URL
+    description: External URL GitLab is served from, e.g. http://gitlab.example.com. Keeps the gitlab.rb default if omitted.
+    required: false
+    secret: false
+  - key: GITLAB_ROOT_PASSWORD
+    label: Root password
+    description: Initial password for the `root` user (at least 8 characters). Only honored on the first reconfigure.
+    required: false
+    secret: true

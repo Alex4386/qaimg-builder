@@ -163,3 +163,26 @@ Resolution precedence for each key:
 All three files are flat `KEY=VALUE` (values may be quoted). Deliver deploy-time
 credentials as cloud-init vendor-data or user-data with a `write_files` entry
 for `/etc/qaimg/credentials` (owner `root:root`, mode `0600`).
+
+### Variable manifest (`variables.yaml`)
+
+The `KEY`s a flavor reads are otherwise implicit in its `build.sh`. To make them
+discoverable by orchestration tooling (e.g. an image registry that renders a form
+and generates the vendor-data automatically), a flavor may ship a `variables.yaml`
+next to its `build.sh` declaring the preconfigured credentials it supports:
+
+```yaml
+variables:
+  - key: POSTGRES_PASSWORD       # env-style KEY written to /etc/qaimg/credentials
+    label: Postgres password     # optional human-readable label
+    description: ...             # optional help text
+    default: supabase            # optional default value
+    required: false              # optional; if true the deployer must supply it
+    secret: true                 # optional; hint to mask the value in UIs
+```
+
+This is a declaration only: values are still delivered at deploy time via
+cloud-init, and every key remains optional at the image level (unset keys fall
+back to the build-time default or a generated random value). Orchestration
+tooling reads this manifest to know which `KEY`s the image accepts and renders
+them into a `/etc/qaimg/credentials` `write_files` entry.
