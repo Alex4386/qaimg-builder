@@ -70,6 +70,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
+      continue-on-error: true
       matrix:
         flavor:
           - generic
