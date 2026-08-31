@@ -288,7 +288,15 @@ download_file() {
         print_info "Downloading checksum..."
         if curl -L -o "$checksum_file" "$checksum_url" 2>/dev/null; then
             print_info "Verifying checksum..."
-            if (cd "$DOWNLOAD_DIR" && sha256sum -c "$filename.sha256"); then
+            local expected_checksum
+            expected_checksum=$(awk 'NR == 1 { print $1 }' "$checksum_file")
+
+            if [ -z "$expected_checksum" ]; then
+                print_error "Checksum file is empty or invalid"
+                return 1
+            fi
+
+            if printf '%s  %s\n' "$expected_checksum" "$filepath" | sha256sum -c -; then
                 print_success "Checksum verification passed"
                 rm "$checksum_file"
             else

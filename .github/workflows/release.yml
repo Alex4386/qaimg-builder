@@ -226,9 +226,10 @@ jobs:
           mv "${file}.compressed" "$file"
         done < <(find . -type f \( -name '*.img' -o -name '*.qcow2' \) -print0)
 
-        # Create checksums for all compressed image files.
+        # Create portable checksums that reference only the release asset name.
         while IFS= read -r -d '' file; do
-          sha256sum "$file" > "$file.sha256"
+          checksum=$(sha256sum "$file" | awk '{print $1}')
+          printf '%s  %s\n' "$checksum" "$(basename "$file")" > "$file.sha256"
         done < <(find . -type f \( -name '*.img' -o -name '*.qcow2' \) -print0)
 
     - name: Set release tag
