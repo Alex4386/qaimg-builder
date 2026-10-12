@@ -31,11 +31,19 @@ case "$CODENAME" in
     "buster") VERSION="10" ;;
     "stretch") VERSION="9" ;;
     "jessie") VERSION="8" ;;
-    *) 
+    *)
         echo "Error: Unknown Debian codename '$CODENAME'"
         echo "Supported: trixie (13), bookworm (12), bullseye (11), buster (10), stretch (9), jessie (8)"
         exit 1
         ;;
+esac
+
+# End-of-life releases are removed from deb.debian.org / security.debian.org
+# and only live on archive.debian.org. The cloud image still points at the live
+# mirrors, whose stale indexes reference pool files that now 404.
+ARCHIVED=false
+case "$CODENAME" in
+    "bullseye"|"buster"|"stretch"|"jessie") ARCHIVED=true ;;
 esac
 
 # Configuration
@@ -72,6 +80,13 @@ sudo "$QIMI_PATH" exec "temp_$OUTPUT_NAME" --nameserver 1.1.1.1 -- /bin/bash -c 
     set -e
     # Make apt resilient to the flaky deb.debian.org mirror round-robin.
     printf 'Acquire::Retries \"5\";\n' > /etc/apt/apt.conf.d/80-retries
+    if [[ \"$ARCHIVED\" == \"true\" ]]; then
+        find /etc/apt -name '*.list' -o -name '*.sources' | xargs -r sed -i \
+            -e 's#https\?://deb\.debian\.org/debian-security#http://archive.debian.org/debian-security#g' \
+            -e 's#https\?://security\.debian\.org/debian-security#http://archive.debian.org/debian-security#g' \
+            -e 's#https\?://deb\.debian\.org/debian#http://archive.debian.org/debian#g'
+        printf 'Acquire::Check-Valid-Until \"false\";\n' > /etc/apt/apt.conf.d/80-archive
+    fi
     apt-get update
     apt-get install -y qemu-guest-agent
     systemctl enable qemu-guest-agent
