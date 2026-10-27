@@ -14,8 +14,8 @@ source "$SCRIPT_DIR/../common/resize-image.sh"
 # override or disable with IMAGE_RESIZE=0.
 IMAGE_MIN_DISK_GB="${IMAGE_MIN_DISK_GB:-8}"
 
-# Get codename from first argument, default to noble
-CODENAME="${1:-noble}"
+# Get codename from first argument, default to resolute (26.04 LTS)
+CODENAME="${1:-resolute}"
 
 # if $2 is nobuild, don't build
 NOBUILD=false

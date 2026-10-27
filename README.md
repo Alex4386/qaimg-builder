@@ -33,7 +33,7 @@ curl -O https://raw.githubusercontent.com/Alex4386/qaimg-builder/main/download-p
 chmod +x download-prebuilt.sh
 
 # Download specific distribution images
-./download-prebuilt.sh ubuntu noble          # Ubuntu Noble (24.04)
+./download-prebuilt.sh ubuntu resolute       # Ubuntu Resolute (26.04)
 ./download-prebuilt.sh debian trixie         # Debian Trixie (13)
 ./download-prebuilt.sh rocky 10              # Rocky Linux 10
 ./download-prebuilt.sh alma 10               # AlmaLinux 10
@@ -78,9 +78,9 @@ Install dependencies:
 #### Building Images
 
 ```bash
-# Ubuntu (default: noble)
+# Ubuntu (default: resolute)
 ./builders/ubuntu.sh
-./builders/ubuntu.sh jammy    # specific version
+./builders/ubuntu.sh noble     # specific version
 
 # Debian (default: bookworm)
 ./builders/debian.sh
@@ -177,7 +177,7 @@ for a ready-to-adapt cloud-init file and
 
 #### Output
 Modified images are saved with `-qa` suffix:
-- `noble-server-cloudimg-amd64-qa.img`
+- `resolute-server-cloudimg-amd64-qa.img`
 - `bookworm-generic-amd64-qa.qcow2`
 - `bookworm-generic-amd64-qa.generic.qcow2` (generic first-run flavor)
 - `bookworm-generic-amd64-qa.nginx.qcow2` (Nginx flavor)

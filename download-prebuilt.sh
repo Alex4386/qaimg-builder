@@ -42,7 +42,7 @@ OPTIONS:
     --list-assets        List available assets for the specified release
 
 EXAMPLES:
-    $0 ubuntu noble                    # Download Ubuntu Noble
+    $0 ubuntu resolute                 # Download Ubuntu Resolute (26.04)
     $0 debian bookworm                 # Download Debian Bookworm
     $0 rocky 10                        # Download Rocky Linux 10
     $0 alma 10                         # Download AlmaLinux 10
@@ -163,7 +163,7 @@ get_asset_name() {
     case "$distro" in
         ubuntu)
             if [ -z "$version" ]; then
-                version="noble"  # default
+                version="resolute"  # default
             fi
             echo "${version}-server-cloudimg-amd64-qa.img"
             ;;
