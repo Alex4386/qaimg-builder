@@ -108,58 +108,58 @@ cloud application blueprints:
 ./flavors/build.sh --list
 
 # Build Debian Bookworm with just the first-run machinery (no app)
-./flavors/build.sh debian generic bookworm
+./flavors/build.sh debian generic trixie
 
 # Build Debian Bookworm with Nginx and qemu-guest-agent
-./flavors/build.sh debian nginx bookworm
+./flavors/build.sh debian nginx trixie
 
 # Build Debian Bookworm with Node.js
-./flavors/build.sh debian nodejs bookworm
+./flavors/build.sh debian nodejs trixie
 
 # Build Debian Bookworm with WireGuard
-./flavors/build.sh debian wireguard bookworm
+./flavors/build.sh debian wireguard trixie
 
 # Build Debian Bookworm with Docker
-./flavors/build.sh debian docker bookworm
+./flavors/build.sh debian docker trixie
 
 # Build Debian Bookworm with Grafana OSS
-./flavors/build.sh debian grafana bookworm
+./flavors/build.sh debian grafana trixie
 
 # Build Debian Bookworm with MariaDB
-./flavors/build.sh debian mariadb bookworm
+./flavors/build.sh debian mariadb trixie
 
 # Build Debian Bookworm with PostgreSQL
-./flavors/build.sh debian postgresql bookworm
+./flavors/build.sh debian postgresql trixie
 
 # Build Debian Bookworm with a vanilla Minecraft server
-./flavors/build.sh debian minecraft-vanilla bookworm
+./flavors/build.sh debian minecraft-vanilla trixie
 
 # Build Debian Bookworm with a Paper Minecraft server
-./flavors/build.sh debian minecraft-paper bookworm
+./flavors/build.sh debian minecraft-paper trixie
 
 # Build Debian Bookworm with a Palworld dedicated server
-./flavors/build.sh debian palworld bookworm
+./flavors/build.sh debian palworld trixie
 
 # Build Debian Bookworm with OpenClaw (personal AI assistant gateway)
-./flavors/build.sh debian openclaw bookworm
+./flavors/build.sh debian openclaw trixie
 
 # Build Debian Bookworm with Coolify (self-hosted PaaS)
-./flavors/build.sh debian coolify bookworm
+./flavors/build.sh debian coolify trixie
 
 # Build Debian Bookworm with self-hosted Supabase
-./flavors/build.sh debian supabase bookworm
+./flavors/build.sh debian supabase trixie
 
 # Build Debian Bookworm with GitLab CE
-./flavors/build.sh debian gitlab bookworm
+./flavors/build.sh debian gitlab trixie
 
 # Build Debian Bookworm with Strapi
-./flavors/build.sh debian strapi bookworm
+./flavors/build.sh debian strapi trixie
 
 # Build Debian Bookworm with Prometheus
-./flavors/build.sh debian prometheus bookworm
+./flavors/build.sh debian prometheus trixie
 
 # Build Debian Bookworm with Elasticsearch
-./flavors/build.sh debian elasticsearch bookworm
+./flavors/build.sh debian elasticsearch trixie
 ```
 
 Flavor builders live at `flavors/<distribution>/<flavor>/build.sh`. See
@@ -179,24 +179,24 @@ for a ready-to-adapt cloud-init file and
 Modified images are saved with `-qa` suffix:
 - `resolute-server-cloudimg-amd64-qa.img`
 - `bookworm-generic-amd64-qa.qcow2`
-- `bookworm-generic-amd64-qa.generic.qcow2` (generic first-run flavor)
-- `bookworm-generic-amd64-qa.nginx.qcow2` (Nginx flavor)
-- `bookworm-generic-amd64-qa.nodejs.qcow2` (Node.js flavor)
-- `bookworm-generic-amd64-qa.wireguard.qcow2` (WireGuard flavor)
-- `bookworm-generic-amd64-qa.docker.qcow2` (Docker flavor)
-- `bookworm-generic-amd64-qa.grafana.qcow2` (Grafana OSS flavor)
-- `bookworm-generic-amd64-qa.mariadb.qcow2` (MariaDB flavor)
-- `bookworm-generic-amd64-qa.postgresql.qcow2` (PostgreSQL flavor)
-- `bookworm-generic-amd64-qa.minecraft-vanilla.qcow2` (Minecraft Vanilla flavor)
-- `bookworm-generic-amd64-qa.minecraft-paper.qcow2` (Minecraft Paper flavor)
-- `bookworm-generic-amd64-qa.palworld.qcow2` (Palworld flavor)
-- `bookworm-generic-amd64-qa.openclaw.qcow2` (OpenClaw flavor)
-- `bookworm-generic-amd64-qa.coolify.qcow2` (Coolify flavor)
-- `bookworm-generic-amd64-qa.supabase.qcow2` (Supabase flavor)
-- `bookworm-generic-amd64-qa.gitlab.qcow2` (GitLab CE flavor)
-- `bookworm-generic-amd64-qa.strapi.qcow2` (Strapi flavor)
-- `bookworm-generic-amd64-qa.prometheus.qcow2` (Prometheus flavor)
-- `bookworm-generic-amd64-qa.elasticsearch.qcow2` (Elasticsearch flavor)
+- `trixie-generic-amd64-qa.generic.qcow2` (generic first-run flavor)
+- `trixie-generic-amd64-qa.nginx.qcow2` (Nginx flavor)
+- `trixie-generic-amd64-qa.nodejs.qcow2` (Node.js flavor)
+- `trixie-generic-amd64-qa.wireguard.qcow2` (WireGuard flavor)
+- `trixie-generic-amd64-qa.docker.qcow2` (Docker flavor)
+- `trixie-generic-amd64-qa.grafana.qcow2` (Grafana OSS flavor)
+- `trixie-generic-amd64-qa.mariadb.qcow2` (MariaDB flavor)
+- `trixie-generic-amd64-qa.postgresql.qcow2` (PostgreSQL flavor)
+- `trixie-generic-amd64-qa.minecraft-vanilla.qcow2` (Minecraft Vanilla flavor)
+- `trixie-generic-amd64-qa.minecraft-paper.qcow2` (Minecraft Paper flavor)
+- `trixie-generic-amd64-qa.palworld.qcow2` (Palworld flavor)
+- `trixie-generic-amd64-qa.openclaw.qcow2` (OpenClaw flavor)
+- `trixie-generic-amd64-qa.coolify.qcow2` (Coolify flavor)
+- `trixie-generic-amd64-qa.supabase.qcow2` (Supabase flavor)
+- `trixie-generic-amd64-qa.gitlab.qcow2` (GitLab CE flavor)
+- `trixie-generic-amd64-qa.strapi.qcow2` (Strapi flavor)
+- `trixie-generic-amd64-qa.prometheus.qcow2` (Prometheus flavor)
+- `trixie-generic-amd64-qa.elasticsearch.qcow2` (Elasticsearch flavor)
 - `rockylinux-9-GenericCloud.latest-qa.qcow2`
 - `AlmaLinux-9-GenericCloud-latest-qa.x86_64.qcow2`
 - `Arch-Linux-x86_64-cloudimg-qa.qcow2`

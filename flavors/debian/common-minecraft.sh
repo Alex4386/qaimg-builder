@@ -11,7 +11,7 @@ export DEBIAN_FRONTEND=noninteractive
 MINECRAFT_DIR=/var/lib/minecraft
 
 apt-get update
-apt-get install -y ca-certificates curl jq openjdk-17-jre-headless screen
+apt-get install -y ca-certificates curl jq openjdk-21-jre-headless screen
 
 if ! id -u minecraft >/dev/null 2>&1; then
     useradd --system --user-group --home-dir "$MINECRAFT_DIR" \

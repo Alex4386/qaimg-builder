@@ -13,25 +13,25 @@ flavors/<distribution>/<flavor>/build.sh
 Use the dispatcher or invoke a flavor directly:
 
 ```bash
-./flavors/build.sh debian generic bookworm
-./flavors/build.sh debian nginx bookworm
-./flavors/build.sh debian nodejs bookworm
-./flavors/build.sh debian wireguard bookworm
-./flavors/build.sh debian docker bookworm
-./flavors/build.sh debian grafana bookworm
-./flavors/build.sh debian mariadb bookworm
-./flavors/build.sh debian postgresql bookworm
-./flavors/build.sh debian minecraft-vanilla bookworm
-./flavors/build.sh debian minecraft-paper bookworm
-./flavors/build.sh debian palworld bookworm
-./flavors/build.sh debian openclaw bookworm
-./flavors/build.sh debian coolify bookworm
-./flavors/build.sh debian supabase bookworm
-./flavors/build.sh debian gitlab bookworm
-./flavors/build.sh debian strapi bookworm
-./flavors/build.sh debian prometheus bookworm
-./flavors/build.sh debian elasticsearch bookworm
-./flavors/debian/nginx/build.sh bookworm
+./flavors/build.sh debian generic trixie
+./flavors/build.sh debian nginx trixie
+./flavors/build.sh debian nodejs trixie
+./flavors/build.sh debian wireguard trixie
+./flavors/build.sh debian docker trixie
+./flavors/build.sh debian grafana trixie
+./flavors/build.sh debian mariadb trixie
+./flavors/build.sh debian postgresql trixie
+./flavors/build.sh debian minecraft-vanilla trixie
+./flavors/build.sh debian minecraft-paper trixie
+./flavors/build.sh debian palworld trixie
+./flavors/build.sh debian openclaw trixie
+./flavors/build.sh debian coolify trixie
+./flavors/build.sh debian supabase trixie
+./flavors/build.sh debian gitlab trixie
+./flavors/build.sh debian strapi trixie
+./flavors/build.sh debian prometheus trixie
+./flavors/build.sh debian elasticsearch trixie
+./flavors/debian/nginx/build.sh trixie
 ```
 
 Flavor-specific setup and usage belongs in each flavor directory's `README.md`.
@@ -39,8 +39,8 @@ Flavor-specific setup and usage belongs in each flavor directory's `README.md`.
 To reuse a base image instead of downloading it:
 
 ```bash
-BASE_IMAGE=/images/bookworm-generic-amd64-qa.qcow2 \
-  ./flavors/build.sh debian nginx bookworm
+BASE_IMAGE=/images/trixie-generic-amd64-qa.qcow2 \
+  ./flavors/build.sh debian nginx trixie
 ```
 
 ## Adding a flavor
@@ -118,7 +118,7 @@ export FLAVOR_MIN_DISK_GB="${FLAVOR_MIN_DISK_GB:-16}"   # operator can override
 Notes:
 
 - The default expression lets an operator override the size at build time:
-  `FLAVOR_MIN_DISK_GB=40 ./flavors/build.sh debian gitlab bookworm`.
+  `FLAVOR_MIN_DISK_GB=40 ./flavors/build.sh debian gitlab trixie`.
 - If the image is already at least that large, the resize is a no-op.
 - `FLAVOR_RESIZE=0` disables the resize (used by the test suite, which builds
   against a stub image).

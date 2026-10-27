@@ -4,10 +4,10 @@ This flavor installs the stock Debian `mariadb-server` package and applies
 preconfigured credentials on first boot.
 
 ```bash
-./flavors/build.sh debian mariadb bookworm
+./flavors/build.sh debian mariadb trixie
 ```
 
-The output is `bookworm-generic-amd64-qa.mariadb.qcow2`.
+The output is `trixie-generic-amd64-qa.mariadb.qcow2`.
 
 ## Credentials
 

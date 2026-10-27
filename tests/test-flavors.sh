@@ -117,7 +117,7 @@ assert_credentials_base() {
 assert_minecraft_common() {
     local script="$1"
 
-    grep -q '^apt-get install -y ca-certificates curl jq openjdk-17-jre-headless screen$' \
+    grep -q '^apt-get install -y ca-certificates curl jq openjdk-21-jre-headless screen$' \
         "$script"
     grep -q 'useradd --system --user-group' "$script"
     grep -q -- '--shell /usr/sbin/nologin minecraft' "$script"
@@ -144,9 +144,9 @@ OUTPUT_DIR="$TMP_ROOT/output" \
 QIMI_PATH="$TMP_ROOT/qimi" \
 QIMI_USE_SUDO=0 \
 QIMI_CAPTURE_FILE="$TMP_ROOT/default-script" \
-"$PROJECT_ROOT/flavors/debian/nginx/build.sh" bookworm
+"$PROJECT_ROOT/flavors/debian/nginx/build.sh" trixie
 
-OUTPUT_IMAGE="$TMP_ROOT/output/bookworm-generic-amd64-qa.nginx.qcow2"
+OUTPUT_IMAGE="$TMP_ROOT/output/trixie-generic-amd64-qa.nginx.qcow2"
 cmp "$TMP_ROOT/base.qcow2" "$OUTPUT_IMAGE"
 grep -q '^apt-get install -y nginx$' "$TMP_ROOT/default-script"
 if grep -Eq '/var/www|sites-available|EXTRA_PACKAGES|qemu-guest-agent nginx|nginx -t|systemctl' \
@@ -164,10 +164,10 @@ while read -r flavor package; do
     QIMI_PATH="$TMP_ROOT/qimi" \
     QIMI_USE_SUDO=0 \
     QIMI_CAPTURE_FILE="$capture_file" \
-    "$PROJECT_ROOT/flavors/debian/$flavor/build.sh" bookworm
+    "$PROJECT_ROOT/flavors/debian/$flavor/build.sh" trixie
 
     cmp "$TMP_ROOT/base.qcow2" \
-        "$TMP_ROOT/output/bookworm-generic-amd64-qa.$flavor.qcow2"
+        "$TMP_ROOT/output/trixie-generic-amd64-qa.$flavor.qcow2"
     printf 'set -e\nexport DEBIAN_FRONTEND=noninteractive\n\napt-get update\napt-get install -y %s' \
         "$package" > "$expected_script"
     cmp "$expected_script" "$capture_file"
@@ -182,10 +182,10 @@ OUTPUT_DIR="$TMP_ROOT/output" \
 QIMI_PATH="$TMP_ROOT/qimi" \
 QIMI_USE_SUDO=0 \
 QIMI_CAPTURE_FILE="$TMP_ROOT/postgresql-script" \
-"$PROJECT_ROOT/flavors/debian/postgresql/build.sh" bookworm
+"$PROJECT_ROOT/flavors/debian/postgresql/build.sh" trixie
 
 cmp "$TMP_ROOT/base.qcow2" \
-    "$TMP_ROOT/output/bookworm-generic-amd64-qa.postgresql.qcow2"
+    "$TMP_ROOT/output/trixie-generic-amd64-qa.postgresql.qcow2"
 bash -n "$TMP_ROOT/postgresql-script"
 grep -q '^apt-get install -y postgresql openssl$' "$TMP_ROOT/postgresql-script"
 assert_credentials_base "$TMP_ROOT/postgresql-script"
@@ -200,10 +200,10 @@ OUTPUT_DIR="$TMP_ROOT/output" \
 QIMI_PATH="$TMP_ROOT/qimi" \
 QIMI_USE_SUDO=0 \
 QIMI_CAPTURE_FILE="$TMP_ROOT/mariadb-script" \
-"$PROJECT_ROOT/flavors/debian/mariadb/build.sh" bookworm
+"$PROJECT_ROOT/flavors/debian/mariadb/build.sh" trixie
 
 cmp "$TMP_ROOT/base.qcow2" \
-    "$TMP_ROOT/output/bookworm-generic-amd64-qa.mariadb.qcow2"
+    "$TMP_ROOT/output/trixie-generic-amd64-qa.mariadb.qcow2"
 bash -n "$TMP_ROOT/mariadb-script"
 grep -q '^apt-get install -y mariadb-server openssl$' "$TMP_ROOT/mariadb-script"
 assert_credentials_base "$TMP_ROOT/mariadb-script"
@@ -218,10 +218,10 @@ OUTPUT_DIR="$TMP_ROOT/output" \
 QIMI_PATH="$TMP_ROOT/qimi" \
 QIMI_USE_SUDO=0 \
 QIMI_CAPTURE_FILE="$TMP_ROOT/generic-script" \
-"$PROJECT_ROOT/flavors/debian/generic/build.sh" bookworm
+"$PROJECT_ROOT/flavors/debian/generic/build.sh" trixie
 
 cmp "$TMP_ROOT/base.qcow2" \
-    "$TMP_ROOT/output/bookworm-generic-amd64-qa.generic.qcow2"
+    "$TMP_ROOT/output/trixie-generic-amd64-qa.generic.qcow2"
 bash -n "$TMP_ROOT/generic-script"
 grep -q '^apt-get install -y openssl$' "$TMP_ROOT/generic-script"
 assert_credentials_base "$TMP_ROOT/generic-script"
@@ -243,9 +243,9 @@ OUTPUT_DIR="$TMP_ROOT/output" \
 QIMI_PATH="$TMP_ROOT/qimi" \
 QIMI_USE_SUDO=0 \
 QIMI_CAPTURE_FILE="$TMP_ROOT/nodejs-script" \
-"$PROJECT_ROOT/flavors/debian/nodejs/build.sh" bookworm
+"$PROJECT_ROOT/flavors/debian/nodejs/build.sh" trixie
 
-NODEJS_IMAGE="$TMP_ROOT/output/bookworm-generic-amd64-qa.nodejs.qcow2"
+NODEJS_IMAGE="$TMP_ROOT/output/trixie-generic-amd64-qa.nodejs.qcow2"
 cmp "$TMP_ROOT/base.qcow2" "$NODEJS_IMAGE"
 bash -n "$TMP_ROOT/nodejs-script"
 grep -q '^NODE_MAJOR=24$' "$TMP_ROOT/nodejs-script"
@@ -272,9 +272,9 @@ OUTPUT_DIR="$TMP_ROOT/output" \
 QIMI_PATH="$TMP_ROOT/qimi" \
 QIMI_USE_SUDO=0 \
 QIMI_CAPTURE_FILE="$TMP_ROOT/docker-script" \
-"$PROJECT_ROOT/flavors/debian/docker/build.sh" bookworm
+"$PROJECT_ROOT/flavors/debian/docker/build.sh" trixie
 
-DOCKER_IMAGE="$TMP_ROOT/output/bookworm-generic-amd64-qa.docker.qcow2"
+DOCKER_IMAGE="$TMP_ROOT/output/trixie-generic-amd64-qa.docker.qcow2"
 cmp "$TMP_ROOT/base.qcow2" "$DOCKER_IMAGE"
 bash -n "$TMP_ROOT/docker-script"
 grep -q '^apt-get install -y ca-certificates curl$' "$TMP_ROOT/docker-script"
@@ -298,12 +298,12 @@ OUTPUT_DIR="$TMP_ROOT/output" \
 QIMI_PATH="$TMP_ROOT/qimi" \
 QIMI_USE_SUDO=0 \
 QIMI_CAPTURE_FILE="$TMP_ROOT/grafana-script" \
-"$PROJECT_ROOT/flavors/debian/grafana/build.sh" bookworm
+"$PROJECT_ROOT/flavors/debian/grafana/build.sh" trixie
 
-GRAFANA_IMAGE="$TMP_ROOT/output/bookworm-generic-amd64-qa.grafana.qcow2"
+GRAFANA_IMAGE="$TMP_ROOT/output/trixie-generic-amd64-qa.grafana.qcow2"
 cmp "$TMP_ROOT/base.qcow2" "$GRAFANA_IMAGE"
 bash -n "$TMP_ROOT/grafana-script"
-grep -q '^apt-get install -y apt-transport-https software-properties-common wget$' \
+grep -q '^apt-get install -y apt-transport-https wget$' \
     "$TMP_ROOT/grafana-script"
 grep -Fq 'https://apt.grafana.com/gpg.key' "$TMP_ROOT/grafana-script"
 grep -Fq 'deb [signed-by=/usr/share/keyrings/grafana.key] https://apt.grafana.com stable main' \
@@ -320,9 +320,9 @@ OUTPUT_DIR="$TMP_ROOT/output" \
 QIMI_PATH="$TMP_ROOT/qimi" \
 QIMI_USE_SUDO=0 \
 QIMI_CAPTURE_FILE="$TMP_ROOT/minecraft-vanilla-script" \
-"$PROJECT_ROOT/flavors/debian/minecraft-vanilla/build.sh" bookworm
+"$PROJECT_ROOT/flavors/debian/minecraft-vanilla/build.sh" trixie
 
-VANILLA_IMAGE="$TMP_ROOT/output/bookworm-generic-amd64-qa.minecraft-vanilla.qcow2"
+VANILLA_IMAGE="$TMP_ROOT/output/trixie-generic-amd64-qa.minecraft-vanilla.qcow2"
 cmp "$TMP_ROOT/base.qcow2" "$VANILLA_IMAGE"
 bash -n "$TMP_ROOT/minecraft-vanilla-script"
 assert_minecraft_common "$TMP_ROOT/minecraft-vanilla-script"
@@ -340,9 +340,9 @@ OUTPUT_DIR="$TMP_ROOT/output" \
 QIMI_PATH="$TMP_ROOT/qimi" \
 QIMI_USE_SUDO=0 \
 QIMI_CAPTURE_FILE="$TMP_ROOT/minecraft-paper-script" \
-"$PROJECT_ROOT/flavors/debian/minecraft-paper/build.sh" bookworm
+"$PROJECT_ROOT/flavors/debian/minecraft-paper/build.sh" trixie
 
-PAPER_IMAGE="$TMP_ROOT/output/bookworm-generic-amd64-qa.minecraft-paper.qcow2"
+PAPER_IMAGE="$TMP_ROOT/output/trixie-generic-amd64-qa.minecraft-paper.qcow2"
 cmp "$TMP_ROOT/base.qcow2" "$PAPER_IMAGE"
 bash -n "$TMP_ROOT/minecraft-paper-script"
 assert_minecraft_common "$TMP_ROOT/minecraft-paper-script"
@@ -365,9 +365,9 @@ QIMI_PATH="$TMP_ROOT/qimi" \
 QIMI_USE_SUDO=0 \
 FLAVOR_RESIZE=0 \
 QIMI_CAPTURE_FILE="$TMP_ROOT/palworld-script" \
-"$PROJECT_ROOT/flavors/debian/palworld/build.sh" bookworm
+"$PROJECT_ROOT/flavors/debian/palworld/build.sh" trixie
 
-PALWORLD_IMAGE="$TMP_ROOT/output/bookworm-generic-amd64-qa.palworld.qcow2"
+PALWORLD_IMAGE="$TMP_ROOT/output/trixie-generic-amd64-qa.palworld.qcow2"
 cmp "$TMP_ROOT/base.qcow2" "$PALWORLD_IMAGE"
 bash -n "$TMP_ROOT/palworld-script"
 grep -q '^STEAM_APP_ID=2394010$' "$TMP_ROOT/palworld-script"
@@ -399,10 +399,10 @@ build_flavor() {
     QIMI_USE_SUDO=0 \
     FLAVOR_RESIZE=0 \
     QIMI_CAPTURE_FILE="$TMP_ROOT/$flavor-script" \
-    "$PROJECT_ROOT/flavors/debian/$flavor/build.sh" bookworm \
+    "$PROJECT_ROOT/flavors/debian/$flavor/build.sh" trixie \
         > "$TMP_ROOT/$flavor-log" 2>&1
     cmp "$TMP_ROOT/base.qcow2" \
-        "$TMP_ROOT/output/bookworm-generic-amd64-qa.$flavor.qcow2"
+        "$TMP_ROOT/output/trixie-generic-amd64-qa.$flavor.qcow2"
     bash -n "$TMP_ROOT/$flavor-script"
 }
 

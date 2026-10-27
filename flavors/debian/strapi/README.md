@@ -7,10 +7,10 @@ service.
 ## Build
 
 ```bash
-./flavors/build.sh debian strapi bookworm
+./flavors/build.sh debian strapi trixie
 ```
 
-The output is `bookworm-generic-amd64-qa.strapi.qcow2`.
+The output is `trixie-generic-amd64-qa.strapi.qcow2`.
 
 The service is enabled in the image and runs as the dedicated, non-login
 `strapi` system user. The application lives in `/opt/strapi/app`.

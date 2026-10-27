@@ -4,10 +4,10 @@ This flavor installs the stock Debian `postgresql` package and applies
 preconfigured credentials on first boot.
 
 ```bash
-./flavors/build.sh debian postgresql bookworm
+./flavors/build.sh debian postgresql trixie
 ```
 
-The output is `bookworm-generic-amd64-qa.postgresql.qcow2`.
+The output is `trixie-generic-amd64-qa.postgresql.qcow2`.
 
 ## Credentials
 

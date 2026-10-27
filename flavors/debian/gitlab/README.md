@@ -6,10 +6,10 @@ This flavor installs [GitLab Community Edition](https://about.gitlab.com/)
 ## Build
 
 ```bash
-./flavors/build.sh debian gitlab bookworm
+./flavors/build.sh debian gitlab trixie
 ```
 
-The output is `bookworm-generic-amd64-qa.gitlab.qcow2`.
+The output is `trixie-generic-amd64-qa.gitlab.qcow2`.
 
 GitLab omnibus bundles and supervises its own services (Puma, Sidekiq,
 PostgreSQL, Redis, Gitaly, NGINX, etc.) under the `gitlab-runsvdir.service`
@@ -94,7 +94,7 @@ sudo systemctl status gitlab-runsvdir
   several GB of disk are required for a usable instance. The build grows the
   image to `FLAVOR_MIN_DISK_GB` (default 8 GiB) so the package installs and
   reconfigures with headroom; override it if needed, e.g.
-  `FLAVOR_MIN_DISK_GB=40 ./flavors/build.sh debian gitlab bookworm`.
+  `FLAVOR_MIN_DISK_GB=40 ./flavors/build.sh debian gitlab trixie`.
 - The first `gitlab-ctl reconfigure` at boot can take several minutes; GitLab is
   not reachable until it finishes.
 - The omnibus package is published for `amd64` and `arm64` only.

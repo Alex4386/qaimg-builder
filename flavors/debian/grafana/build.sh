@@ -7,7 +7,7 @@ set -e
 export DEBIAN_FRONTEND=noninteractive
 
 apt-get update
-apt-get install -y apt-transport-https software-properties-common wget
+apt-get install -y apt-transport-https wget
 
 install -m 0755 -d /usr/share/keyrings
 wget -q -O /usr/share/keyrings/grafana.key https://apt.grafana.com/gpg.key

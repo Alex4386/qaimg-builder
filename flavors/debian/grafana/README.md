@@ -7,10 +7,10 @@ configuration or install plugins.
 ## Build
 
 ```bash
-./flavors/build.sh debian grafana bookworm
+./flavors/build.sh debian grafana trixie
 ```
 
-The output is `bookworm-generic-amd64-qa.grafana.qcow2`.
+The output is `trixie-generic-amd64-qa.grafana.qcow2`.
 
 Manage the packaged service with:
 

@@ -8,10 +8,10 @@ messaging channels such as WhatsApp, Telegram, Slack, and Discord.
 ## Build
 
 ```bash
-./flavors/build.sh debian openclaw bookworm
+./flavors/build.sh debian openclaw trixie
 ```
 
-The output is `bookworm-generic-amd64-qa.openclaw.qcow2`.
+The output is `trixie-generic-amd64-qa.openclaw.qcow2`.
 
 Node.js 24.x (from NodeSource, satisfying OpenClaw's 24.15+ recommendation) and
 the `openclaw` CLI are pre-baked globally into the image

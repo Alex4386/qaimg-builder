@@ -23,7 +23,7 @@ Build the Debian $flavor flavor.
 Usage:
   $caller_script [CODENAME]
 
-CODENAME defaults to bookworm.
+CODENAME defaults to trixie.
 
 Optional environment variables:
   BASE_IMAGE=/path/base.qcow2   Reuse an existing Debian QA image
@@ -41,7 +41,7 @@ EOF
         flavor_die "Expected at most one Debian codename"
     fi
 
-    codename="${1:-bookworm}"
+    codename="${1:-trixie}"
     case "$codename" in
         trixie|bookworm|bullseye|buster|stretch|jessie) ;;
         *) flavor_die "Unsupported Debian codename: $codename" ;;

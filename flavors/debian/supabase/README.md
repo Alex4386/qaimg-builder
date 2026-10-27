@@ -7,10 +7,10 @@ the image, and enables it as a systemd service.
 ## Build
 
 ```bash
-./flavors/build.sh debian supabase bookworm
+./flavors/build.sh debian supabase trixie
 ```
 
-The output is `bookworm-generic-amd64-qa.supabase.qcow2`.
+The output is `trixie-generic-amd64-qa.supabase.qcow2`.
 
 Docker is installed from Docker's official APT repository (same as the `docker`
 flavor) and enabled. The compose project is staged under `/opt/supabase/project`

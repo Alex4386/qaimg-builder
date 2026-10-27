@@ -7,10 +7,10 @@ add a service.
 ## Build
 
 ```bash
-./flavors/build.sh debian nodejs bookworm
+./flavors/build.sh debian nodejs trixie
 ```
 
-The output is `bookworm-generic-amd64-qa.nodejs.qcow2`.
+The output is `trixie-generic-amd64-qa.nodejs.qcow2`.
 
 Verify the installed runtime with:
 

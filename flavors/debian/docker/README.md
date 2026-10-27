@@ -9,10 +9,10 @@ create containers.
 ## Build
 
 ```bash
-./flavors/build.sh debian docker bookworm
+./flavors/build.sh debian docker trixie
 ```
 
-The output is `bookworm-generic-amd64-qa.docker.qcow2`.
+The output is `trixie-generic-amd64-qa.docker.qcow2`.
 
 Check the packaged service with:
 

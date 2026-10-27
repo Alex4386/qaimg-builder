@@ -6,10 +6,10 @@ from Elastic's official APT repository and enables it as a systemd service.
 ## Build
 
 ```bash
-./flavors/build.sh debian elasticsearch bookworm
+./flavors/build.sh debian elasticsearch trixie
 ```
 
-The output is `bookworm-generic-amd64-qa.elasticsearch.qcow2`.
+The output is `trixie-generic-amd64-qa.elasticsearch.qcow2`.
 
 The service is enabled in the image and runs as the dedicated, non-login
 `elasticsearch` system user created by the Debian package.

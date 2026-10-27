@@ -6,10 +6,10 @@ from Debian's official repository and enables it as a systemd service.
 ## Build
 
 ```bash
-./flavors/build.sh debian prometheus bookworm
+./flavors/build.sh debian prometheus trixie
 ```
 
-The output is `bookworm-generic-amd64-qa.prometheus.qcow2`.
+The output is `trixie-generic-amd64-qa.prometheus.qcow2`.
 
 The service is enabled in the image and runs as the dedicated, non-login
 `prometheus` system user created by the Debian package.

@@ -6,10 +6,10 @@ keys, tunnel configuration, firewall rules, or network interfaces.
 ## Build
 
 ```bash
-./flavors/build.sh debian wireguard bookworm
+./flavors/build.sh debian wireguard trixie
 ```
 
-The output is `bookworm-generic-amd64-qa.wireguard.qcow2`.
+The output is `trixie-generic-amd64-qa.wireguard.qcow2`.
 
 Verify the installed tools with:
 

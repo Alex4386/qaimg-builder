@@ -6,10 +6,10 @@ OpenJDK 17 and GNU Screen.
 ## Build
 
 ```bash
-./flavors/build.sh debian minecraft-vanilla bookworm
+./flavors/build.sh debian minecraft-vanilla trixie
 ```
 
-The output is `bookworm-generic-amd64-qa.minecraft-vanilla.qcow2`.
+The output is `trixie-generic-amd64-qa.minecraft-vanilla.qcow2`.
 
 The service is enabled in the image and runs as the dedicated, non-login
 `minecraft` system user. Server data is stored in `/var/lib/minecraft`, and the

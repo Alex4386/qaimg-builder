@@ -6,10 +6,10 @@ with OpenJDK 17 and GNU Screen.
 ## Build
 
 ```bash
-./flavors/build.sh debian minecraft-paper bookworm
+./flavors/build.sh debian minecraft-paper trixie
 ```
 
-The output is `bookworm-generic-amd64-qa.minecraft-paper.qcow2`.
+The output is `trixie-generic-amd64-qa.minecraft-paper.qcow2`.
 
 The service is enabled in the image and runs as the dedicated, non-login
 `minecraft` system user. Server data is stored in `/var/lib/minecraft`, Paper

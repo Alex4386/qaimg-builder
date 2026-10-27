@@ -99,24 +99,24 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y qemu-utils parted wget cloud-guest-utils e2fsprogs xfsprogs btrfs-progs
 
-    - name: Download Debian Bookworm base image
+    - name: Download Debian Trixie base image
       uses: actions/download-artifact@v4
       with:
-        name: debian-bookworm-qa-image
+        name: debian-trixie-qa-image
         path: base-image
 
-    - name: Build Debian Bookworm ${{ matrix.flavor }} image
+    - name: Build Debian Trixie ${{ matrix.flavor }} image
       run: |
-        BASE_IMAGE="$GITHUB_WORKSPACE/base-image/bookworm-generic-amd64-qa.qcow2" \
+        BASE_IMAGE="$GITHUB_WORKSPACE/base-image/trixie-generic-amd64-qa.qcow2" \
         OUTPUT_DIR="$GITHUB_WORKSPACE/output" \
-          ./flavors/build.sh debian "${{ matrix.flavor }}" bookworm
-        qemu-img check "output/bookworm-generic-amd64-qa.${{ matrix.flavor }}.qcow2"
+          ./flavors/build.sh debian "${{ matrix.flavor }}" trixie
+        qemu-img check "output/trixie-generic-amd64-qa.${{ matrix.flavor }}.qcow2"
 
-    - name: Upload Debian Bookworm ${{ matrix.flavor }} artifact
+    - name: Upload Debian Trixie ${{ matrix.flavor }} artifact
       uses: actions/upload-artifact@v4
       with:
-        name: debian-bookworm-${{ matrix.flavor }}-qa-image
-        path: output/bookworm-generic-amd64-qa.${{ matrix.flavor }}.qcow2
+        name: debian-trixie-${{ matrix.flavor }}-qa-image
+        path: output/trixie-generic-amd64-qa.${{ matrix.flavor }}.qcow2
         if-no-files-found: error
         retention-days: 1
         compression-level: 0

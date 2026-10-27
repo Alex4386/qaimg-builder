@@ -47,7 +47,7 @@ EXAMPLES:
     $0 rocky 10                        # Download Rocky Linux 10
     $0 alma 10                         # Download AlmaLinux 10
     $0 arch                            # Download Arch Linux
-    $0 -f docker debian bookworm       # Download Debian Bookworm docker flavor
+    $0 -f docker debian trixie         # Download Debian Trixie docker flavor
     $0 -a                              # Download all images from latest release
     $0 -r v2025.07.29 ubuntu jammy     # Download from specific release
     $0 -r v2025.07.29 -a              # Download all images from specific release
@@ -169,7 +169,11 @@ get_asset_name() {
             ;;
         debian)
             if [ -z "$version" ]; then
-                version="bookworm"  # default
+                if [ -n "$flavor" ]; then
+                    version="trixie"  # flavors are built on trixie
+                else
+                    version="bookworm"  # default
+                fi
             fi
             if [ -n "$flavor" ]; then
                 echo "${version}-generic-amd64-qa.${flavor}.qcow2"

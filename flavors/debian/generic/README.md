@@ -17,10 +17,10 @@ It bakes in:
 ## Build
 
 ```bash
-./flavors/build.sh debian generic bookworm
+./flavors/build.sh debian generic trixie
 ```
 
-The output is `bookworm-generic-amd64-qa.generic.qcow2`.
+The output is `trixie-generic-amd64-qa.generic.qcow2`.
 
 ## Adding your own first-run logic
 

@@ -7,10 +7,10 @@ Coolify is a self-hostable PaaS that deploys and manages applications on Docker.
 ## Build
 
 ```bash
-./flavors/build.sh debian coolify bookworm
+./flavors/build.sh debian coolify trixie
 ```
 
-The output is `bookworm-generic-amd64-qa.coolify.qcow2`.
+The output is `trixie-generic-amd64-qa.coolify.qcow2`.
 
 Docker is installed from Docker's official APT repository (same as the `docker`
 flavor) and enabled. Coolify itself runs as a set of Docker containers managed
